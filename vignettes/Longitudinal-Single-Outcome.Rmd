@@ -32,11 +32,12 @@ For $k > 0$, we have $L_k \sim N(L_{k−1} + 0.5 A_{k−1}, 0.1)$, $A_0 = A_1 = 
 
 Our structural causal model is
 
-$$\PM(Y = 1 \mid \rm{do}(\bar{A_k}, B, C) = \rm{expit}(-2 + 0.1B + 0.02C - \beta \sum_{j = 1}^{4}A_j))$$
+$$\PM(Y = 1 \mid \rm{do}(\bar{A_k}), B, C) = \rm{expit}(-2 + 0.1B + 0.02C - \beta \sum_{j = 1}^{4}A_j))$$
 
 ## Simulate t = 0, 1, 2
-Here, we set up the number of samples and our quantiles data frame.
-Note that we assume $A_k$ is the same for $k = 0,1,2$, so the quantiles for those variables are set to be the same.
+
+Here, we set up the number of samples and our quantiles data frame. Note that we assume $A_k$ is the same for $k = 0,1,2$, so the quantiles for those variables are set to be the same.
+
 ```{r}
 # t = 0, n = 10,000
 n <- 1e4
@@ -46,8 +47,8 @@ qtls <- cbind(qtls, qtls[["A_0"]], qtls[["A_0"]])
 colnames(qtls) <- c("B", "C", "L_0", "A_0", "A_1", "A_2")
 ```
 
-Now we use the inverse cdf to get random samples from our quantiles. We
-collect them in `dat0` variable.
+Now we use the inverse cdf to get random samples from our quantiles. We collect them in `dat0` variable.
+
 ```{r}
 B <- qbinom(qtls[["B"]], 1, 0.1);  C <- qunif(qtls[["C"]], 25, 35)
 L_0 <- qnorm(qtls[["L_0"]], 11 - 0.05 * B - 0.02 * C, 0.5)
@@ -57,8 +58,8 @@ dat0 <- cbind(B, C, L_0, A_0, A_1, A_2)
 
 ```
 
-This code chunk sets up our `surv_model` object by defining the structur
-and parameters we imposed above.
+This code chunk sets up our `surv_model` object by defining the structur and parameters we imposed above.
+
 ```{r}
 forms <- list(list(B ~ 1, C ~ 1),
               L ~ B + C,
@@ -82,7 +83,9 @@ pars <- list(
 surv_model <- survivl_model(formulas = forms, family = fams,
                             pars = pars, T = 5, dat = dat0, qtls = qtls)
 ```
-We call `rmsm` to simulate from this model. 
+
+We call `rmsm` to simulate from this model.
+
 ```{r}
 dat <- rmsm(n, surv_model)
 ```

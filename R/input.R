@@ -104,7 +104,7 @@ process_inputs <- function (formulas, pars, family, link,
   if(any(survival_outcome)){
     if(any(!is_surv_outcome(family[[4]][which(survival_outcome)]))){
       if(family[[4]][[which(survival_outcome)]]$name == "binomial"){
-        warning("User is specifying explicit probability risk function structural model.")
+        message("User is specifying explicit probability risk function structural model.")
       }else{
         stop(paste0("Specified a survival outcome without a 
                   survival type (non-negative and continuous)"))

@@ -9,7 +9,6 @@
 sim_inversion_longitudinal <- function(out, surv_model) {
   mod_inputs <- modify_inputs(surv_model)
   formulas <- mod_inputs$formulas
-
   pars <- surv_model$pars; order <- surv_model$ordering; 
   LHS_C <- surv_model$LHSs$LHS_C; done <- unlist(LHS_C)
   LHS_Y <- surv_model$LHSs$LHS_Y

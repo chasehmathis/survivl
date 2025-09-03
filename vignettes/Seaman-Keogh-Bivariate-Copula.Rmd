@@ -30,18 +30,19 @@ options(digits=4)
 set.seed(124)
 ```
 
-We define our survival model the same as the modle in the Marginal
+We define our survival model the same as the model in the Marginal
 Structural Model Vignette. One thing that is different is that the
 copula formula is just one list entry. This formula no longer specifies
 the copula, but specifies the risk function necessary for the simulation
 technique. Similarly, the copula parameters only have a $\rho$ entry as
 we only have one parameter.
 
-There are two ways Seaman & Keogh allow users to model the causal effect 
-in a survival marginal structural model. The first method is to directly model
-the probability risk function $P(Y_k \mid \rm{do}(\bar{A_k}), Y_{k-1} = 0)$. 
-The second method is to model the hazard through a more flexible model $\lambda(t)$.
-The package supports both and we will first describe how to directly model hazards.
+There are two ways Seaman & Keogh allow users to model the causal effect
+in a survival marginal structural model. The first method is to directly
+model the probability risk function
+$P(Y_k \mid \rm{do}(\bar{A_k}), Y_{k-1} = 0)$. The second method is to
+model the hazard through a more flexible model $\lambda(t)$. The package
+supports both and we will first describe how to directly model hazards.
 
 ## Directly Modeling Hazards
 
@@ -56,14 +57,17 @@ pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)),
              Y = list(beta=c(1,-1/10,-1/5), phi=1),
-             cop =list(Y=list(rho = -0.5)))
+             cop =list(Y=list(Z =list(rho = -0.5))))
+# only can use gaussian rho parameter
 link <- list("log", "identity", "logit", "logit")
 
 ```
-Note that we put the family for our outcome to be binomial. A binomial distribution
-is not a survival distribution like exponential or weibull. If the user specifies a binomial
-family in `survivl` the computer understands that the user wants to directly model
-the risk. To keep numbers in a [0,1] scale, we use the logit link function.
+
+Note that we put the family for our outcome to be binomial. A binomial
+distribution is not a survival distribution like exponential or weibull.
+If the user specifies a binomial family in `survivl` the computer
+understands that the user wants to directly model the risk. To keep
+numbers in a [0,1] scale, we use the logit link function.
 
 Below, note that we add the `method` = "bootstrap" argument to
 calculate. Also, the default number of simulations is 5e3 -1, but for
@@ -104,10 +108,11 @@ temp <- ipw::ipwtm(
 datl$wt <- temp$ipw.weights
 ```
 
-We recover the causal effect by using the IPW estimator (within 2 s.e.). If we had not
-use the weights, then our estimate would be very far from the truth we
-had specified showing the strength of the $Z$ variable confounding on
-the effect of $X$ on $Y$.
+We recover the causal effect by using the IPW estimator (within 2 s.e.).
+If we had not use the weights, then our estimate would be very far from
+the truth we had specified showing the strength of the $Z$ variable
+confounding on the effect of $X$ on $Y$.
+
 ```{r}
 mod_correct <- glm(Y ~ W + X, family = binomial(link = "logit"), data = datl,
                     weights = wt)
@@ -138,9 +143,11 @@ kableExtra::kbl(tab_correct, digits = c(2,3,5), booktabs=TRUE, format="latex")  
 ```
 
 ## Continuous Time Failures
-Above, we directly modeled the hazard of a single observation and do not model when
-an observation may fail but instead how likely it is to make it to the next time step.
-If we want to model time continuously, we can use the exponential or weibull distribution.
+
+Above, we directly modeled the hazard of a single observation and do not
+model when an observation may fail but instead how likely it is to make
+it to the next time step. If we want to model time continuously, we can
+use the exponential or weibull distribution.
 
 ```{r formulas continuous}
 
@@ -152,19 +159,18 @@ pars2[["Y"]] <- list(beta=c(0,-0.45, -0.2), phi=1)
 sm2 <- modify(sm, family = fams2, pars = pars2)
 
 ```
-Now, we model the outcome to be exponential (Gamma family is 3) and phi = 1 is exponential.
-We use the modify function to modify our survival model object. For fun, we also
-change the paramaters of $Y \mid \rm{do}(X)$
-The rest of the data generation is the same as above.
 
+Now, we model the outcome to be exponential (Gamma family is 3) and phi
+= 1 is exponential. We use the modify function to modify our survival
+model object. For fun, we also change the paramaters of
+$Y \mid \rm{do}(X)$ The rest of the data generation is the same as
+above.
 
 ```{r build-model continuous and sim data, include=FALSE}
 n <- 1e4
 dat <- rmsm(n, sm2)
 datl <- surv_to_long(dat)
 ```
-
-
 
 ### Estimating the Causal Effect
 
@@ -214,4 +220,3 @@ kableExtra::kbl(tab_naive, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>
 kableExtra::kbl(tab_correct, digits = c(2,3,5), booktabs=TRUE, format="latex")  %>%
   kableExtra::add_header_above(c(" " = 1, "IPW Model" = 3))
 ```
-
