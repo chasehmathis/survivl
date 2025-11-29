@@ -10,8 +10,8 @@ pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)),
              Y = list(beta=c(0,-0.1, -0.2), phi=1),
-             cop = list(Y=list(rho = -0.5))
-)
+             cop = list(Y=list(Z = list(rho = -0.5))))
+
 link <- list("log", "identity", "logit", "log")
 
 set.seed(123)

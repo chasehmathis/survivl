@@ -109,12 +109,13 @@ process_inputs <- function(formulas, pars, family, link,
 
   terms <- lapply(formulas[[4]], function(x) all.vars(x))
   survival_outcome <- unlist(lapply(terms, function(x) any(grepl("_l\\d+", x))))
-  if (any(survival_outcome)) {
-    if (any(!is_surv_outcome(family[[4]][which(survival_outcome)]))) {
-      if (family[[4]][[which(survival_outcome)]]$name == "binomial") {
-        warning("User is specifying explicit probability risk function structural model.")
-      } else {
-        stop(paste0("Specified a survival outcome without a survival type (non-negative and continuous)"))
+  if(any(survival_outcome)){
+    if(any(!is_surv_outcome(family[[4]][which(survival_outcome)]))){
+      if(family[[4]][[which(survival_outcome)]]$name == "binomial"){
+        message("User is specifying explicit probability risk function structural model.")
+      }else{
+        stop(paste0("Specified a survival outcome without a 
+                  survival type (non-negative and continuous)"))
       }
     }
   }

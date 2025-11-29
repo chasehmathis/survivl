@@ -10,8 +10,8 @@ pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)),
              Y = list(beta=c(0,-0.45, -0.2), phi=1),
-             cop = list(Y=list(rho = -0.8))
-)
+             cop = list(Y=list(Z = list(rho = -0.8))))
+
 link <- list("log", "identity", "logit", "log")
 
 set.seed(123)
@@ -59,8 +59,8 @@ pars <- list(W = list(beta=0, phi=1/2),
              Z = list(beta=c(0,0.7,0.2), phi=1),
              X = list(beta=c(-0.5,0.25,0.5)),
              Y = list(beta=c(0,0.45, 0.2), shape = 1, scale=1),
-             cop = list(Y=list(rho = -0.8))
-)
+             cop = list(Y=list(Z = list(rho = -0.8))))
+
 link <- list("log", "identity", "logit", "log")
 
 set.seed(123)

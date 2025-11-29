@@ -61,7 +61,7 @@ pars <- list(C = list(beta=0),
              Z = list(beta = c(-1/2,1/2,0.25), phi=0.5),
              X = list(beta = c(0,1/2,1/10)),
              Y = list(beta = c(0.05,0.5,0.05), phi=1),
-             cop = list(beta=0.8472979))  # gives correlation 0.4
+             cop = list(Y = list(Z = list(beta=0.8472979))))  # gives correlation 0.4
 
 n <- 1e4
 

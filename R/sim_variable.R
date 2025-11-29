@@ -78,16 +78,12 @@ sim_variable <- function(n, formulas, family, pars, link,
 
   eta <- X_do %*% pars[["doPar"]]$beta
   phi <- pars[["doPar"]]$phi
-  lambda <- (link_apply(eta, link[[1]], family = family[[1]]$name)) # not working with ordinal or categorical
-  for (i in 1:p) {
-    pdist_pars <- pars[["doPar"]]
-    pdist_pars$x <- 1
-    pdist_pars$beta <- NULL
-    pdist_pars$mu <- lambda
-    quantiles[[paste0("q", k, "_", 0, "_", i)]] <- do.call(
-      family[[1]]$pdist,
-      pdist_pars
-    )
+  lambda <- (link_apply(eta, link[[1]], family_nm = family[[1]]$name)) # not working with ordinal or categorical
+  for(i in 1:p){
+    pdist_pars <- pars[["doPar"]]; pdist_pars$x <- 1; 
+    pdist_pars$beta <- NULL; pdist_pars$mu <- lambda;
+    quantiles[[paste0("q", k, "_", 0, "_", i)]] = do.call(family[[1]]$pdist, 
+                                                          pdist_pars)
   }
 
 
@@ -390,16 +386,14 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars, X) {
 ##' @param p Boolean if we want to compute a cdf instead of h function required for survival outcomes.
 ##' @export
 compute_copula_quantiles <- function(qs, X, family, pars, idxs, inv, p = FALSE) {
+  
   # pin from 1 to 1-eps for eps = 0.0005
   fam <- family[[idxs[1], idxs[2]]]
   copPars <- pars[[idxs[1], idxs[2]]]
-  beta <- copPars$beta
   df <- copPars$df
-  if (fam == 11) {
-    stop("Not supported for fgm")
-  }
-
-  qY <- rescale_cop(qs, X, beta, family = fam, df = df, inv = inv, cdf = p)
+  if(fam == 11){stop("Not supported for fgm")}
+  qY <- rescale_cop(qs, X,
+                    family = fam,pars = copPars,  df = df, inverse = inv, cdf = p)
 
   return(qY)
 }
