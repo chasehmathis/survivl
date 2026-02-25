@@ -67,14 +67,32 @@ process_inputs <- function(formulas, pars, family, link,
   # link[[4]] <- "inverse"
 
   # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
-  dummy_dat <- causl::gen_dummy_dat(family = family, pars = pars, dat = dat, LHSs = LHSs, dims = dims)
+  LHSs_dummy_dat <- LHSs
+  dummy_dat <- causl::gen_dummy_dat(family = family[1], pars = pars[1], dat = dat, 
+                                    LHSs = LHSs[1], dims = dims)
   # causl::check_pars(formulas=formulas, family=family, pars=pars, dummy_dat=dummy_dat, LHSs=LHSs, kwd=control$cop, dims=dims)
-
-  ## naive check for number of parameters
+  
+  for(t in seq(T)-1){
+    t_dat <- causl::gen_dummy_dat(family = family[2:4], pars = pars[2:4], dat = dat, 
+                                  LHSs = LHSs[2:4], dims = dims[2:4])
+    colnames(t_dat) <- paste0(colnames(t_dat), "_", t)
+    dummy_dat <- cbind(dummy_dat, t_dat)
+  }
+  ## A better check for number of parameters
   for (j in seq_along(LHSs)) {
     for (i in seq_along(formulas[[j]])) {
-      npar <- length(tms[[j]][[i]]) + attr(forms[[j]][[i]], "intercept")
-      if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
+# only check the end
+      for(t in c(T-2, T-1)){
+        if(j > 1){modLHS = TRUE}
+        else{modLHS = FALSE}
+        formula <- mod_args(form = formulas[[j]][[i]], beta = pars[[j]]$beta, 
+                            t = t, modLHS = modLHS)$form
+        npar <-ncol(model.matrix(formula, data = dummy_dat))
+        if (is_categorical(family[[j]][[i]])) {
+          npar <- npar * (pars[[j]]$nlevels-1)
+        }
+        if (length(pars[[LHSs[[j]][i]]]$beta) != npar) stop(paste0("dimension of model matrix for ", LHSs[[j]][i], " does not match number of coefficients provided"))
+      }
     }
   }
   ## useful summaries

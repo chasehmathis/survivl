@@ -71,7 +71,7 @@ get_surv_family <- function(val) {
   } else {
     fmly <- causl::family_vals[fm, ]$family
   }
-  if (is.numeric(val) && val > 5) stop("No function defined yet for this family")
+  #if (is.numeric(val) && val > 5) stop("No function defined yet for this family")
 
   if (surv) {
     out <- get(paste0(fmly, "_surv_fam"))
