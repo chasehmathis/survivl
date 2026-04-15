@@ -1,3 +1,4 @@
+skip_if_not_installed("survey")
 suppressWarnings(library(survey))
 suppressWarnings(library(survival))
 suppressWarnings(library(ipw))

@@ -7,9 +7,11 @@
 empirical_cdf_bootstrap(mod_inputs, out, riskH)
 }
 \arguments{
-\item{out}{Simulated data so far.}
+\item{mod_inputs}{processed model inputs from \code{process_inputs}}
 
-\item{pars}{list of parameter settings to use}
+\item{out}{simulated data so far}
+
+\item{riskH}{empirical cumulative hazard function used in the bootstrap}
 }
 \description{
 Obtain samples from a specified Cox Marginal Structural Model

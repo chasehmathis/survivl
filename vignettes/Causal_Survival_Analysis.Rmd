@@ -82,9 +82,10 @@ inverse probability weighting.  We recommend using the `survey` library's `svygl
 function, since its standard errors account for the re-weighting.
 
 ```{r survey_load, message=FALSE}
-library(survey)
+if (requireNamespace("survey", quietly = TRUE)) library(survey)
 library(dplyr)
 library(ipw)
+library(survival)
 options(digits=5)
 ```
 Now, we fit a GLM to obtain the weighting to use with $X$.
@@ -120,9 +121,9 @@ summary(glmY)$coefficients
 
 If we ignore the fact that the covariates are time-varying, we will obtain a biased estimate of the coefficient of $X$ on $Y$.
 
-```{r naive_fit, warning=FALSE}
-mod_naive <- svyglm(I(1-Y) ~ X, 
-              family=binomial(link=log), 
+```{r naive_fit, warning=FALSE, eval = requireNamespace("survey", quietly = TRUE)}
+mod_naive <- svyglm(I(1-Y) ~ X,
+              family=binomial(link=log),
               design = svydesign(ids=datl$id,
                                  weights=~1,
                                  data=datl))

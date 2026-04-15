@@ -52,6 +52,16 @@ msm_samp <- function(n, dat = NULL, qtls = NULL, T, formulas, family, pars, link
   return(dat)
 }
 
+##' Simulate from a `survivl_model` object
+##'
+##' Obtain samples from a pre-specified `survivl_model` object.
+##'
+##' @param n number of samples
+##' @param surv_model an object of class `survivl_model`
+##' @param control list of control parameters
+##'
+##' @return An object of class `survivl_dat` containing the simulated data.
+##'
 ##' @export
 rmsm <- function(n, surv_model, control = list()) {
   kwd <- surv_model$kwd
@@ -110,6 +120,7 @@ rmsm <- function(n, surv_model, control = list()) {
   ## simulate static covariates
   baseline_vars <- unlist(LHS_C)
   j <- 1
+
   for (i in seq_along(LHS_C)) {
     if (all(is.na(out[[LHS_C[[i]]]]))) {
       ## now compute etas
@@ -122,12 +133,13 @@ rmsm <- function(n, surv_model, control = list()) {
       # qtls[[LHS_C[[i]]]] <- attr(tmp, "quantile")
       if (is.null(qtls)) {
         qtls <- setNames(data.frame(list(attr(tmp, "quantile"))), LHS_C[[i]])
+        j <- j + 1
         next
       }
       qtls <- cbind(
         qtls[seq_len(i - 1)],
         setNames(list(attr(tmp, "quantile")), LHS_C[[i]]),
-        qtls[seq(i, ncol(qtls))]
+        qtls[seq(i, ncol(qtls), length.out = max(0, ncol(qtls) -i + 1)*(i < ncol(qtls)))]
       )
       j <- j + 1
     }

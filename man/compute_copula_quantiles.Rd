@@ -10,15 +10,17 @@ compute_copula_quantiles(qs, X, family, pars, idxs, inv, p = FALSE)
 \arguments{
 \item{qs}{a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.}
 
+\item{X}{conditioning variable values used in conditional copula computations.}
+
 \item{family}{A list of numeric copula family 1,2,3,4,5 see \code{copula_vals} for more.}
 
 \item{pars}{Parameter for the copula.}
 
+\item{idxs}{index or indices indicating which copula to use when there are multiple.}
+
 \item{inv}{Boolean if inverse or regular h function}
 
 \item{p}{Boolean if we want to compute a cdf instead of h function required for survival outcomes.}
-
-\item{i}{Use i as an index for which copula we are working with if there are multiple}
 }
 \description{
 A wrapper function to compute h or inverse h functions. Also can apply a
