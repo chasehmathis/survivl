@@ -1,3 +1,10 @@
+## Suppress R CMD check notes for variables used in NSE contexts
+utils::globalVariables(c(
+  "id", "name", "value",
+  "LHS_Z", "LHS_Y", "var_nms_Z", "var_nms_Y", "verbose", "censoring",
+  "contains"
+))
+
 ##' Manipulate survival data
 ##'
 ##' @param dat survival dataset

@@ -3,7 +3,16 @@
 ##' This defines a `survivl_model` object, that can be used either for simulation
 ##' or inference.
 ##'
+##' @param formulas list of lists of formulas for each variable group
+##' @param family list of families for baseline, time-varying covariates, treatment, outcome, and copula
+##' @param pars list of parameter settings for each variable
+##' @param link list of link functions for GLM-like models
+##' @param T number of time points
+##' @param dat optional data frame for plasmode simulation
+##' @param qtls optional quantiles associated with `dat` for plasmode simulation
+##' @param method sampling method; one of `"inversion"`, `"bootstrap"`, or `"rejection"`
 ##' @param kwd word used for copula formula and parameters
+##' @param control list of control parameters
 ##'
 ##' @details
 ##' The components `formulas` and `family` must both be specified, and have
@@ -55,6 +64,13 @@ print.survivl_model <- function(x, ...) {
   invisible(x)
 }
 
+##' Modify an object
+##'
+##' Generic function for modifying objects in-place.
+##'
+##' @param x object to modify
+##' @param ... additional arguments passed to methods
+##'
 ##' @export
 modify <- function(x, ...) {
   UseMethod("modify")
@@ -73,13 +89,13 @@ modify.default <- function(x, ...) {
 ##' @inheritParams survivl_model
 ##' @param x an object of class `survivl_model`
 ##' @param over logical: should components be added/modified or entirely over-written?
+##' @param ... additional arguments (not used)
 ##'
-##' This function can be used to modify
-##'
+##' @importFrom methods is
 ##' @exportS3Method
 modify.survivl_model <- function(x, over = FALSE, formulas, family, pars,
                                  T, link, dat, method, qtls,
-                                 kwd) {
+                                 kwd, ...) {
   if (!is(x, "survivl_model")) stop("Must include an object of class 'survivl_model'")
 
   if (missing(formulas) && missing(family) && missing(pars) && missing(link) &&

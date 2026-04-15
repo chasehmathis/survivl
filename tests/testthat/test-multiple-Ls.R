@@ -1,4 +1,4 @@
-
+library(survival)
 n <- 1e4
 
 formulas <- list(W ~ 1,

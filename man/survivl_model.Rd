@@ -18,7 +18,25 @@ survivl_model(
 )
 }
 \arguments{
+\item{formulas}{list of lists of formulas for each variable group}
+
+\item{family}{list of families for baseline, time-varying covariates, treatment, outcome, and copula}
+
+\item{pars}{list of parameter settings for each variable}
+
+\item{link}{list of link functions for GLM-like models}
+
+\item{T}{number of time points}
+
+\item{dat}{optional data frame for plasmode simulation}
+
+\item{qtls}{optional quantiles associated with \code{dat} for plasmode simulation}
+
+\item{method}{sampling method; one of \code{"inversion"}, \code{"bootstrap"}, or \code{"rejection"}}
+
 \item{kwd}{word used for copula formula and parameters}
+
+\item{control}{list of control parameters}
 }
 \description{
 This defines a \code{survivl_model} object, that can be used either for simulation

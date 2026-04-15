@@ -18,5 +18,5 @@ returned by \code{get_family()}.  This function also returns families defined
 by the \code{survivl} package.
 }
 \seealso{
-\link{family_vals}
+\link[causl:family_vals]{causl::family_vals}
 }

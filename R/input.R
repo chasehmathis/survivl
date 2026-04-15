@@ -68,10 +68,11 @@ process_inputs <- function(formulas, pars, family, link,
 
   # LHSs <- list(LHS_C=LHS_C, LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y)
   LHSs_dummy_dat <- LHSs
-  dummy_dat <- causl::gen_dummy_dat(family = family[1], pars = pars[1], dat = dat, 
+  dummy_dat <- causl::gen_dummy_dat(family = family[1], pars = pars[1], dat = dat,
                                     LHSs = LHSs[1], dims = dims)
   # causl::check_pars(formulas=formulas, family=family, pars=pars, dummy_dat=dummy_dat, LHSs=LHSs, kwd=control$cop, dims=dims)
-  
+  if (nrow(dummy_dat) == 0) dummy_dat <- data.frame(row.names = 1L)
+
   for(t in seq(T)-1){
     t_dat <- causl::gen_dummy_dat(family = family[2:4], pars = pars[2:4], dat = dat, 
                                   LHSs = LHSs[2:4], dims = dims[2:4])

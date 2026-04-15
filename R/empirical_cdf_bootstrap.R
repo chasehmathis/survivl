@@ -5,8 +5,9 @@
 ##'
 ##' @importFrom causl sim_variable
 ##' @importFrom causl `lhs<-`
-##' @param out Simulated data so far.
-##' @param pars list of parameter settings to use
+##' @param mod_inputs processed model inputs from `process_inputs`
+##' @param out simulated data so far
+##' @param riskH empirical cumulative hazard function used in the bootstrap
 
 ##' @export
 empirical_cdf_bootstrap <- function(mod_inputs, out,

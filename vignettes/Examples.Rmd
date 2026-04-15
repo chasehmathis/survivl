@@ -52,10 +52,11 @@ datl <- surv_to_long(dat)
 ```
 
 ```{r plot_dat1, message=FALSE}
-library(ggfortify)
 library(survival)
 survplot <- survfit(Surv(t, t_stop, Y) ~ C, data=datl)
-autoplot(survplot)
+if (requireNamespace("ggfortify", quietly = TRUE)) {
+  autoplot(survplot)
+}
 ```
 
 We recommend using `ipw::ipwtm` function to calculate ipw weights for time varying confounding. 
@@ -127,10 +128,11 @@ datl2 <- surv_to_long(dat2)
 ```
 
 ```{r plot_dat2, message=FALSE}
-library(ggfortify)
 library(survival)
 survplot <- survfit(Surv(t, t_stop, Y) ~ C, data=datl2)
-autoplot(survplot)
+if (requireNamespace("ggfortify", quietly = TRUE)) {
+  autoplot(survplot)
+}
 ```
 
 The `ipwtm` function allows for certain families, but not the gamma family. 

@@ -15,17 +15,34 @@
   dat,
   method,
   qtls,
-  kwd
+  kwd,
+  ...
 )
 }
 \arguments{
 \item{x}{an object of class \code{survivl_model}}
 
-\item{over}{logical: should components be added/modified or entirely over-written?
+\item{over}{logical: should components be added/modified or entirely over-written?}
 
-This function can be used to modify}
+\item{formulas}{list of lists of formulas for each variable group}
+
+\item{family}{list of families for baseline, time-varying covariates, treatment, outcome, and copula}
+
+\item{pars}{list of parameter settings for each variable}
+
+\item{T}{number of time points}
+
+\item{link}{list of link functions for GLM-like models}
+
+\item{dat}{optional data frame for plasmode simulation}
+
+\item{method}{sampling method; one of \code{"inversion"}, \code{"bootstrap"}, or \code{"rejection"}}
+
+\item{qtls}{optional quantiles associated with \code{dat} for plasmode simulation}
 
 \item{kwd}{word used for copula formula and parameters}
+
+\item{...}{additional arguments (not used)}
 }
 \description{
 Change one or more components of a \code{survivl_model} object.

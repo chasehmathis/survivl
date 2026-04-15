@@ -45,10 +45,11 @@ sim_variable <- function(n, formulas, family, pars, link,
     for (l in seq_len(p)) {
       cop_fams[[l, j]] <- family[[2]][l]
       cop_forms[[l, j]] <- formulas[[2]][[l]][[idx]]
-      cop_pars[[l, j]] <- list(
-        beta = pars$cop[[1]][[l]]$beta[[idx]],
-        df = pars$cop[[1]][[l]]$df
-      )
+      cop_pars[[l, j]] <- if (!is.null(pars$cop[[1]][[l]]$k_tau)) {
+        list(k_tau = pars$cop[[1]][[l]]$k_tau, df = pars$cop[[1]][[l]]$df)
+      } else {
+        list(beta = pars$cop[[1]][[l]]$beta[[idx]], df = pars$cop[[1]][[l]]$df)
+      }
     }
     idx <- idx + 1
   }
@@ -379,9 +380,10 @@ competing_loop <- function(k, p, vnm, time_vars, quantiles, family, pars, X) {
 ##' @importFrom copula normalCopula tCopula
 ##' @importFrom copula claytonCopula gumbelCopula frankCopula joeCopula fgmCopula
 ##' @param qs a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.
+##' @param X conditioning variable values used in conditional copula computations.
 ##' @param family A list of numeric copula family 1,2,3,4,5 see `copula_vals` for more.
 ##' @param pars Parameter for the copula.
-##' @param i Use i as an index for which copula we are working with if there are multiple
+##' @param idxs index or indices indicating which copula to use when there are multiple.
 ##' @param inv Boolean if inverse or regular h function
 ##' @param p Boolean if we want to compute a cdf instead of h function required for survival outcomes.
 ##' @export

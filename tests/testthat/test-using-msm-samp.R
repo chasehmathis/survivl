@@ -1,4 +1,6 @@
+skip_if_not_installed("survey")
 suppressMessages(library(survey))
+library(survival)
 n <- 1e4
 
 formulas <- list(W ~ 1,
