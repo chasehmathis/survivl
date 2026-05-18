@@ -163,14 +163,10 @@ scenarios <- list(
     forms5 = L ~ 1,
     fam5   = 3,
     cop    = list(Y = list(L = list(k_tau = 0.7, par2 = 5)))
-  ),
-
-  gumbel = list(
-    descr = "Gumbel copula (k_tau = 0.7). Upper-tail dependence only.",
-    forms5 = L ~ 1,
-    fam5   = 4,
-    cop    = list(Y = list(L = list(k_tau = 0.7, par2 = 5)))
   )
+  # NOTE: Gumbel (family 4) hangs under this DGP — looks like a numerical
+  # pathology in the Gumbel h-function inversion when combined with the
+  # rejection-sampling loop, so it's omitted from the sweep.
 )
 
 # ── Build a survivl_model for a given scenario ────────────────────────────────
