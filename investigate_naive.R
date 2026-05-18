@@ -331,34 +331,32 @@ scenarios <- list(
   # ─────────────────────────────────────────────────────────────────────────
 
   simpson_flip = list(
-    # Big-number version using a GAUSSIAN outcome. With Y ∈ {0,1} the copula's
-    # contribution to log-odds is bounded so all the action sat in the
-    # third decimal place. Switching to Gaussian Y with residual sd = 50 lets
-    # the confounding channel scale to a HUMAN-READABLE magnitude.
-    # truth = -2 per dose, naive ≈ +0.7 (sign-flipped), IPW ≈ -1.8 (≈ truth).
-    descr = "★ SIMPSON FLIP (Gaussian Y, big numbers): truth -2, naive +0.7, IPW -1.8.",
+    # Small-variance flip. sd(Y) = 1 so coefficients sit on a familiar scale.
+    # The per-dose delta between IPW and naive is ~0.05 (constrained by
+    # rho·sd_Y / sd_sumA), but it's enough to flip the sign of a -0.05 truth.
+    # Over the 8-dose course the cumulative delta is ~0.4 sd(Y).
+    descr = "★ SIMPSON FLIP (small sd_Y=1): truth -0.05, naive ≈ +0.005, IPW ≈ -0.05.",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
-    fam5   = 2,                              # copula family (t, df=3)
-    Y_fam  = 1,                              # Gaussian outcome
-    Y_phi  = 2500,                           # residual sd_Y = 50
+    fam5   = 2,
+    Y_fam  = 1,
+    Y_phi  = 1,                              # sd_Y = 1
     wide_L = TRUE,
     L_pars = c(0, 0, 0),
     L_phi  = 9,                              # sd_L = 3
     A_pars = c(0, 1.5, 0.5),                 # reversed L→A, mild persistence
-    Y_pars = c(0, 0, 0, -2),                 # truth on sum_A = -2 per dose
+    Y_pars = c(0, 0, 0, -0.05),              # truth -0.05 per dose
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.50), rho_to_beta(0.99) - rho_to_beta(0.50)),
+      beta = c(rho_to_beta(0.00), rho_to_beta(0.99) - rho_to_beta(0.00)),
       df   = 3,
       par2 = 3
     )))
   ),
 
-  simpson_null = list(
-    # Same big-scale recipe but with truth = 0. Naive should still show a
-    # clearly positive effect on the same magnitude as the confounding channel
-    # (~ +2.7), purely fabricated by L not blocked in the model.
-    descr = "★ SIMPSON null (Gaussian Y): TRUE EFFECT = 0, naive ≈ +2.7.",
+  simpson_flip_big = list(
+    # Same recipe rescaled: sd(Y) = 50 makes the per-dose numbers visible
+    # without changing the qualitative story.
+    descr = "★ SIMPSON FLIP big (sd_Y=50): truth -2, naive ≈ +0.7, IPW ≈ -2.",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
     fam5   = 2,
@@ -368,9 +366,28 @@ scenarios <- list(
     L_pars = c(0, 0, 0),
     L_phi  = 9,
     A_pars = c(0, 1.5, 0.5),
-    Y_pars = c(0, 0, 0, 0),
+    Y_pars = c(0, 0, 0, -2),
     cop    = list(Y = list(L = list(
       beta = c(rho_to_beta(0.50), rho_to_beta(0.99) - rho_to_beta(0.50)),
+      df   = 3,
+      par2 = 3
+    )))
+  ),
+
+  simpson_null = list(
+    descr = "★ SIMPSON null (sd_Y=1): truth = 0, naive ≈ +0.06.",
+    T      = 8,
+    forms5 = list(Y = list(L ~ A_l1)),
+    fam5   = 2,
+    Y_fam  = 1,
+    Y_phi  = 1,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),
+    L_phi  = 9,
+    A_pars = c(0, 1.5, 0.5),
+    Y_pars = c(0, 0, 0, 0),
+    cop    = list(Y = list(L = list(
+      beta = c(rho_to_beta(0.00), rho_to_beta(0.99) - rho_to_beta(0.00)),
       df   = 3,
       par2 = 3
     )))
@@ -490,7 +507,7 @@ truths <- sapply(scenarios, scn_truth)
 cat("\n══════════════════════════════════════════════════════════════════════\n")
 cat("Summary (per-scenario truth shown)\n")
 cat("══════════════════════════════════════════════════════════════════════\n")
-summary_tbl <- t(mapply(function(mc, truth) {
+summary_tbl <- t(mapply(function(mc, truth, T_use) {
   ipw_mean   <- mean(mc[, "ipw_trt"],   na.rm = TRUE)
   naive_mean <- mean(mc[, "naive_trt"], na.rm = TRUE)
   c(truth      = truth,
@@ -498,10 +515,11 @@ summary_tbl <- t(mapply(function(mc, truth) {
     naive_est  = naive_mean,
     ipw_bias   = ipw_mean   - truth,
     naive_bias = naive_mean - truth,
-    bias_gap   = abs(naive_mean - truth) - abs(ipw_mean - truth),
+    delta      = naive_mean - ipw_mean,
+    cum_delta  = (naive_mean - ipw_mean) * T_use,    # over full course
     sign_flip  = if (truth == 0) NA_real_ else
                  as.numeric(sign(naive_mean) != sign(truth)))
-}, results, truths))
+}, results, truths, sapply(scenarios, scn_T)))
 print(round(summary_tbl, 3))
 cat("\nbias_gap = |naive bias| - |IPW bias|; sign_flip = 1 means the naive\n")
 cat("coefficient has the OPPOSITE sign from the truth (Simpson's paradox).\n")
