@@ -30,7 +30,6 @@ survivl_model <- function(formulas, family, pars, link, T = T, dat = NULL, qtls 
     risk_h = \(row) sum(row), risk_form = NULL, bootsims = 1e3
   )
   matches <- match(names(control), names(con))
-  print(matches)
   con[matches] <- control[!is.na(matches)]
   if (any(is.na(matches))) {
     warning(

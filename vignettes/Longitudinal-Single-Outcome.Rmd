@@ -40,7 +40,7 @@ Here, we set up the number of samples and our quantiles data frame. Note that we
 
 ```{r}
 # t = 0, n = 10,000
-n <- 1e4
+n <- 1e3
 qtls <- data.frame(matrix(runif(n*4), ncol = 4))
 colnames(qtls) <- c("B", "C", "L_0", "A_0")
 qtls <- cbind(qtls, qtls[["A_0"]], qtls[["A_0"]])
@@ -71,14 +71,14 @@ fams <- list(list(5, 4),
              5,
              5,
              2)
-causal_parameters <- c(-2, 0.1, 0.02, -0.5)
+causal_parameters <- c(-0.5, 0.1, 0.02, -0.5)
 pars <- list(
   B = list(beta = 0.1), 
   C = list(beta = 1),
   L = list(beta = c(11, -0.05, -0.02), phi = 0.5),
   A = list(beta = c(10, -1, 0.1)),
   Y = list(beta = causal_parameters),
-  cop = list(Y = list(L = list(beta = 0.4, par2 = 5))))
+  cop = list(Y = list(L = list(k_tau = 0.5, par2 = 5))))
 
 surv_model <- survivl_model(formulas = forms, family = fams,
                             pars = pars, T = 5, dat = dat0, qtls = qtls)
@@ -90,13 +90,16 @@ We call `rmsm` to simulate from this model.
 dat <- rmsm(n, surv_model)
 ```
 
-Now, we choose to use the IPW estimator to recover our estimates we specified.
+Now, we choose to use three estimators to recover our causal parameters: inverse probability weighting (IPW), outcome regression, and a naive (unadjusted) model.
 
-```{r}
+## IPW Estimator
 
+Since $A_1 = A_2 = A_0$, only $A_0$, $A_3$, and $A_4$ contribute non-trivial weights.
+
+```{r ipw}
 glm_A0 <- glm(A_0 ~ L_0, family = binomial(), data = dat)
-glm_A3 <- glm(A_3 ~ L_0 + L_1 + L_2 + A_0 , family = binomial(), data = dat)
-glm_A4 <- glm(A_4 ~ L_0 + L_1 + L_2 + L_3 + A_0  + A_3, family = binomial(), data = dat)
+glm_A3 <- glm(A_3 ~ L_3 +  A_2 , family = binomial(), data = dat)
+glm_A4 <- glm(A_4 ~L_4+ A_3, family = binomial(), data = dat)
 
 glm_A0_num <- glm(A_0 ~ 1, family = binomial(), data = dat)
 glm_A3_num <- glm(A_3 ~ A_0, family = binomial(), data = dat)
@@ -110,23 +113,58 @@ ps_A0 <- predict(glm_A0, type = "response")
 ps_A3 <- predict(glm_A3, type = "response")
 ps_A4 <- predict(glm_A4, type = "response")
 
-# Compute weights depending on actual values of X_t
+# Compute weights depending on actual values of A_t
 w0 <- ifelse(dat$A_0 == 1, ps_A0, 1 - ps_A0)
-w1 <- w2 <- rep(1,n) #  always 1 because A_1 and A_2 are deterministic conditional on A_0
+w1 <- w2 <- rep(1, n)  # always 1 because A_1 and A_2 are deterministic conditional on A_0
 w3 <- ifelse(dat$A_3 == 1, ps_A3, 1 - ps_A3)
 w4 <- ifelse(dat$A_4 == 1, ps_A4, 1 - ps_A4)
 w0_num <- ifelse(dat$A_0 == 1, ps_A0_num, 1 - ps_A0_num)
 w3_num <- ifelse(dat$A_3 == 1, ps_A3_num, 1 - ps_A3_num)
 w4_num <- ifelse(dat$A_4 == 1, ps_A4_num, 1 - ps_A4_num)
 
-dat$iptw_weights <- w0_num * w3_num * w4_num / (w0 * w1 * w2 * w3 * w4 )
+dat$iptw_weights <- w0_num * w3_num * w4_num / (w0 * w1 * w2 * w3 * w4)
 
-glm_Y <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4), 
-             data = dat, weights = iptw_weights, family = binomial())
+glm_Y_ipw <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4),
+                 data = dat, weights = iptw_weights, family = binomial())
 ```
 
-```{r}
-sumY <- summary(glm_Y)
-abs(sumY$coefficients[,1] - causal_parameters)/sumY$coefficients[,2]
-# should be less than 2 s.e. 95% of the time
+## Outcome Model
+
+The outcome model directly adjusts for the time-varying confounders $L_0, \ldots, L_4$.
+
+```{r outcome}
+glm_Y_outcome <- glm(Y ~ B + C + L_0 + L_1 + L_2 + L_3 + L_4
+                       + I(A_0 + A_1 + A_2 + A_3 + A_4),
+                     data = dat, family = binomial())
+```
+
+## Naive Model
+
+The naive model ignores confounding by the time-varying $L$.
+
+```{r naive}
+glm_Y_naive <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4),
+                   data = dat, family = binomial())
+```
+
+## Comparison
+
+We compare the three estimators against the true causal parameters. Each value is the number of standard errors from the truth — we expect this to be less than 2 about 95% of the time.
+
+```{r compare}
+sumY_ipw     <- summary(glm_Y_ipw)
+sumY_outcome <- summary(glm_Y_outcome)
+sumY_naive   <- summary(glm_Y_naive)
+
+shared_nms <- rownames(sumY_ipw$coefficients)  # (Intercept), B, C, I(sum A)
+
+cat("IPW:\n")
+print(round(abs(sumY_ipw$coefficients[, 1] - causal_parameters) / sumY_ipw$coefficients[, 2], 3))
+
+cat("\nOutcome model:\n")
+out_coef <- sumY_outcome$coefficients[shared_nms, ]
+print(round(abs(out_coef[, 1] - causal_parameters) / out_coef[, 2], 3))
+
+cat("\nNaive:\n")
+print(round(abs(sumY_naive$coefficients[, 1] - causal_parameters) / sumY_naive$coefficients[, 2], 3))
 ```

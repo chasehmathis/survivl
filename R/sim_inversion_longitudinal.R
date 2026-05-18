@@ -23,12 +23,14 @@ sim_inversion_longitudinal <- function(out, surv_model) {
   family <- surv_model$family
   link <- surv_model$link
   T <- surv_model$T
+
   for (t in seq_len(T) - 1) {
     mod_inputs$t <- t
     cinp <- curr_inputs(
       formulas = formulas, pars = pars, ordering = order,
       done = done, t = t, vars_t = vars_t, kwd = kwd
     )
+
     mod_inputs$formulas <- cinp$formulas
     mod_inputs$pars <- cinp$pars
 
@@ -45,6 +47,7 @@ sim_inversion_longitudinal <- function(out, surv_model) {
       }
     }
   }
+
   # start with unif(0,1)
   vt <- runif(nrow(out), 0, 1)
 
@@ -58,10 +61,11 @@ sim_inversion_longitudinal <- function(out, surv_model) {
     for (l in seq_len(dZ)) {
       cop_fams[[l, j]] <- family[[5]][[1]][[l]]
       cop_forms[[l, j]] <- mod_inputs$formulas[[4]][[1]][[l]][[idx]]
-      cop_pars[[l, j]] <- list(
-        beta = mod_inputs$pars$cop[[1]][[l]]$beta[[idx]],
-        df = mod_inputs$pars$cop[[1]][[l]]$df
-      )
+      cop_pars[[l, j]] <- if (!is.null(mod_inputs$pars$cop[[1]][[l]]$k_tau)) {
+        list(k_tau = mod_inputs$pars$cop[[1]][[l]]$k_tau, df = mod_inputs$pars$cop[[1]][[l]]$df)
+      } else {
+        list(beta = mod_inputs$pars$cop[[1]][[l]]$beta[[idx]], df = mod_inputs$pars$cop[[1]][[l]]$df)
+      }
     }
     idx <- idx + 1
   }
@@ -77,6 +81,7 @@ sim_inversion_longitudinal <- function(out, surv_model) {
         vt
       )
 
+
       idxs <- c(i, j + 1)
       form <- do.call("[[", c(list(cop_forms), as.list(idxs)))
       X <- model.matrix(form, data = out)
@@ -86,6 +91,7 @@ sim_inversion_longitudinal <- function(out, surv_model) {
         cop_pars, idxs, inv = TRUE
       )
     }
+
     L_col <- paste0(time_vars[1], "_", j)
     qs <- cbind(qtls[[L_col]], vt)
 
