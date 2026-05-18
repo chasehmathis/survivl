@@ -331,41 +331,46 @@ scenarios <- list(
   # ─────────────────────────────────────────────────────────────────────────
 
   simpson_flip = list(
-    # T=8 (5 model-generated confounded periods A_3..A_7), wide L (sd=2),
-    # reversed L→A with strong persistence, conditional t-copula whose rho
-    # swings 0.3 → 0.95 with past treatment, and a tiny structural effect of
-    # -0.02 logit per A. Empirically yields naive ≈ +0.13 (sign-flipped) while
-    # IPW recovers ≈ truth.
-    descr = "★ SIMPSON FLIP: naive coef goes POSITIVE while truth is -0.02.",
+    # Big-number version using a GAUSSIAN outcome. With Y ∈ {0,1} the copula's
+    # contribution to log-odds is bounded so all the action sat in the
+    # third decimal place. Switching to Gaussian Y with residual sd = 50 lets
+    # the confounding channel scale to a HUMAN-READABLE magnitude.
+    # truth = -2 per dose, naive ≈ +0.7 (sign-flipped), IPW ≈ -1.8 (≈ truth).
+    descr = "★ SIMPSON FLIP (Gaussian Y, big numbers): truth -2, naive +0.7, IPW -1.8.",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
-    fam5   = 2,
+    fam5   = 2,                              # copula family (t, df=3)
+    Y_fam  = 1,                              # Gaussian outcome
+    Y_phi  = 2500,                           # residual sd_Y = 50
     wide_L = TRUE,
     L_pars = c(0, 0, 0),
-    L_phi  = 2,
-    A_pars = c(0, 1, 0.5),               # reversed L→A + mild persistence
-    Y_pars = c(-2, 0, 0, -0.02),         # tiny structural effect
+    L_phi  = 9,                              # sd_L = 3
+    A_pars = c(0, 1.5, 0.5),                 # reversed L→A, mild persistence
+    Y_pars = c(0, 0, 0, -2),                 # truth on sum_A = -2 per dose
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.30), rho_to_beta(0.95) - rho_to_beta(0.30)),
+      beta = c(rho_to_beta(0.50), rho_to_beta(0.99) - rho_to_beta(0.50)),
       df   = 3,
       par2 = 3
     )))
   ),
 
   simpson_null = list(
-    # Identical recipe but with truth = 0. Naive should still be clearly
-    # positive — pure confounding fabricates an apparent harmful effect.
-    descr = "★ SIMPSON null: same recipe, TRUE EFFECT = 0.",
+    # Same big-scale recipe but with truth = 0. Naive should still show a
+    # clearly positive effect on the same magnitude as the confounding channel
+    # (~ +2.7), purely fabricated by L not blocked in the model.
+    descr = "★ SIMPSON null (Gaussian Y): TRUE EFFECT = 0, naive ≈ +2.7.",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
     fam5   = 2,
+    Y_fam  = 1,
+    Y_phi  = 2500,
     wide_L = TRUE,
     L_pars = c(0, 0, 0),
-    L_phi  = 2,
-    A_pars = c(0, 1, 0.5),
-    Y_pars = c(-2, 0, 0, 0),
+    L_phi  = 9,
+    A_pars = c(0, 1.5, 0.5),
+    Y_pars = c(0, 0, 0, 0),
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.30), rho_to_beta(0.95) - rho_to_beta(0.30)),
+      beta = c(rho_to_beta(0.50), rho_to_beta(0.99) - rho_to_beta(0.50)),
       df   = 3,
       par2 = 3
     )))
@@ -409,7 +414,8 @@ scn_truth <- function(scn) {
 
 set.seed(42)
 n <- 1e4
-init <- make_init(n, L_mean = function(B, C) 0, L_sd = 2)
+init <- make_init(n, L_mean = function(B, C) 0,
+                  L_sd = sqrt(scenarios$simpson_flip$L_phi))
 
 cat("══════════════════════════════════════════════════════════════════════\n")
 cat("Single-run diagnostic on simpson_flip, n =", n, "\n")
@@ -443,7 +449,8 @@ cat("═════════════════════════
 run_one <- function(seed, scn) {
   set.seed(seed)
   if (isTRUE(scn$wide_L)) {
-    init_mc <- make_init(1000, L_mean = function(B, C) 0, L_sd = 2)
+    sd_L <- if (!is.null(scn$L_phi)) sqrt(scn$L_phi) else 2
+    init_mc <- make_init(1000, L_mean = function(B, C) 0, L_sd = sd_L)
   } else {
     init_mc <- make_init(1000)
   }
