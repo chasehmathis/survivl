@@ -55,8 +55,10 @@ fams <- list(list(5, 4), 1, 5, 5, 1)  # last entry = copula family; overridden p
 true_pars <- c(`(Intercept)` = -2, B = 0.1, C = 0.02, `I(sum_A)` = -0.5)
 causal_parameters <- unname(true_pars)
 
-# Strong L→A: high L (good hemoglobin) → A = 0; low L → A = 1
-A_pars  <- c(10, -1, 0.1)
+# Strong L→A: high L (good hemoglobin) → A = 0; low L → A = 1.
+# A_pars_sharp gives near-deterministic confounding (used in `sharp_*` scenarios).
+A_pars       <- c(10, -1,   0.1)
+A_pars_sharp <- c(50, -5,   0.1)
 
 base_pars <- list(
   B = list(beta = 0.1),
@@ -68,7 +70,8 @@ base_pars <- list(
 
 # ── Helper to build dat0 / qtls for a given n ────────────────────────────────
 
-make_init <- function(n) {
+make_init <- function(n, L_mean = function(B, C) 11 - 0.05 * B - 0.02 * C,
+                      L_sd = 0.5) {
   qtls <- data.frame(matrix(runif(n * 4), ncol = 4))
   colnames(qtls) <- c("B", "C", "L_0", "A_0")
   qtls <- cbind(qtls, qtls[["A_0"]], qtls[["A_0"]])
@@ -76,42 +79,48 @@ make_init <- function(n) {
 
   B   <- qbinom(qtls[["B"]], 1, 0.1)
   C   <- qunif(qtls[["C"]], 25, 35)
-  L_0 <- qnorm(qtls[["L_0"]], 11 - 0.05 * B - 0.02 * C, 0.5)
+  L_0 <- qnorm(qtls[["L_0"]], L_mean(B, C), L_sd)
   A_0 <- A_1 <- A_2 <- qbinom(qtls[["A_0"]], 1, 0.5)
   dat0 <- cbind(B, C, L_0, A_0, A_1, A_2)
   list(dat0 = dat0, qtls = qtls)
 }
 
 # ── IPW + naive estimation, returns the treatment coefficient from each ──────
+# A_0, A_1, A_2 are fixed in dat0 and not freshly drawn by the model — only A_t
+# for t >= 3 carry actual confounding from L_t. So weights are built from those.
 
-fit_estimators <- function(d) {
-  a0d <- glm(A_0 ~ L_0,       family = binomial(), data = d)
-  a3d <- glm(A_3 ~ L_3 + A_2, family = binomial(), data = d)
-  a4d <- glm(A_4 ~ L_4 + A_3, family = binomial(), data = d)
-  a0n <- glm(A_0 ~ 1,         family = binomial(), data = d)
-  a3n <- glm(A_3 ~ A_0,       family = binomial(), data = d)
-  a4n <- glm(A_4 ~ A_0 + A_3, family = binomial(), data = d)
+fit_estimators <- function(d, T_use = 5) {
+  modelled_t <- 3:(T_use - 1)
+  A_vars <- paste0("A_", 0:(T_use - 1))
+  sumA_form_str <- paste("Y ~ B + C + I(", paste(A_vars, collapse = "+"), ")")
+  sumA_form <- as.formula(sumA_form_str)
 
-  p0d <- predict(a0d, type = "response"); p3d <- predict(a3d, type = "response")
-  p4d <- predict(a4d, type = "response"); p0n <- predict(a0n, type = "response")
-  p3n <- predict(a3n, type = "response"); p4n <- predict(a4n, type = "response")
-
-  w <- (ifelse(d$A_0 == 1, p0n, 1 - p0n) *
-        ifelse(d$A_3 == 1, p3n, 1 - p3n) *
-        ifelse(d$A_4 == 1, p4n, 1 - p4n)) /
-       (ifelse(d$A_0 == 1, p0d, 1 - p0d) *
-        ifelse(d$A_3 == 1, p3d, 1 - p3d) *
-        ifelse(d$A_4 == 1, p4d, 1 - p4d))
+  log_w <- rep(0, nrow(d))
+  for (t in modelled_t) {
+    if (t == 0) next  # never the case here, but defensive
+    a_var <- paste0("A_", t); l_var <- paste0("L_", t); ap_var <- paste0("A_", t - 1)
+    denom <- glm(as.formula(paste(a_var, "~", l_var, "+", ap_var)),
+                 family = binomial(), data = d)
+    numer <- glm(as.formula(paste(a_var, "~", ap_var)),
+                 family = binomial(), data = d)
+    pd <- predict(denom, type = "response")
+    pn <- predict(numer, type = "response")
+    a <- d[[a_var]]
+    log_w <- log_w + log(ifelse(a == 1, pn, 1 - pn)) -
+                     log(ifelse(a == 1, pd, 1 - pd))
+  }
+  w <- exp(log_w)
   d$w <- w
 
-  fit_ipw   <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4),
-                   data = d, weights = w, family = binomial())
-  fit_naive <- glm(Y ~ B + C + I(A_0 + A_1 + A_2 + A_3 + A_4),
-                   data = d, family = binomial())
+  # Y family: detect Gaussian vs binary by uniqueness
+  is_gauss <- !all(d$Y %in% c(0, 1))
+  fam <- if (is_gauss) gaussian() else binomial()
+  fit_ipw   <- glm(sumA_form, data = d, weights = w, family = fam)
+  fit_naive <- glm(sumA_form, data = d, family = fam)
 
   trt_nm <- grep("^I\\(", names(coef(fit_ipw)), value = TRUE)
-  c(ipw_trt   = unname(coef(fit_ipw)[trt_nm]),
-    naive_trt = unname(coef(fit_naive)[trt_nm]),
+  c(ipw_trt    = unname(coef(fit_ipw)[trt_nm]),
+    naive_trt  = unname(coef(fit_naive)[trt_nm]),
     weight_max = max(w),
     weight_mean = mean(w))
 }
@@ -126,6 +135,7 @@ scenarios <- list(
     descr = "Weak Gaussian copula (k_tau = 0.1). Establishes baseline.",
     forms5 = L ~ 1,
     fam5   = 1,
+    A_pars = A_pars,
     cop    = list(Y = list(L = list(k_tau = 0.1, par2 = 5)))
   ),
 
@@ -133,79 +143,293 @@ scenarios <- list(
     descr = "Strong Gaussian copula (k_tau = 0.85). Heavy residual L–Y dep.",
     forms5 = L ~ 1,
     fam5   = 1,
+    A_pars = A_pars,
     cop    = list(Y = list(L = list(k_tau = 0.85, par2 = 5)))
   ),
 
-  heavy_tail_t = list(
-    descr = "Strong t-copula (k_tau = 0.85, df = 2). Joint tail dependence.",
+  # ─────────────────────────────────────────────────────────────────────────
+  # SIMPSON-FLIP CANDIDATES
+  # Negative L–Y dependence + low-L-treated  ⇒  treated have HIGH Y
+  # via the copula even though A→Y structurally is −0.5. Naive coef can
+  # flip sign once the confounding pathway dominates.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  neg_gaussian = list(
+    descr = "Negative Gaussian (k_tau = -0.85). Treated have low L → high Y.",
     forms5 = L ~ 1,
-    fam5   = 2,
-    cop    = list(Y = list(L = list(k_tau = 0.85, df = 2, par2 = 2)))
+    fam5   = 1,
+    A_pars = A_pars,
+    cop    = list(Y = list(L = list(k_tau = -0.85, par2 = 5)))
   ),
 
-  conditional_t = list(
-    # The copula parameter is a regression rho_i = 2*expit(beta0 + beta1*A_l1) - 1.
-    # At A_l1 = 0 we target rho ≈ 0.30, at A_l1 = 1 we target rho ≈ 0.90.
-    # So the L-Y dependence is much stronger after a treatment period — a
-    # genuinely conditional copula that the naive model can never reproduce.
-    descr = "Conditional t-copula: L–Y dep depends on past treatment A_l1.",
+  neg_extreme = list(
+    descr = "Negative Gaussian (k_tau = -0.95).",
+    forms5 = L ~ 1,
+    fam5   = 1,
+    A_pars = A_pars,
+    cop    = list(Y = list(L = list(k_tau = -0.95, par2 = 5)))
+  ),
+
+  neg_t_heavy = list(
+    descr = "Negative t-copula (k_tau = -0.9, df = 2). Tail dep + strong neg.",
+    forms5 = L ~ 1,
+    fam5   = 2,
+    A_pars = A_pars,
+    cop    = list(Y = list(L = list(k_tau = -0.9, df = 2, par2 = 2)))
+  ),
+
+  neg_conditional = list(
+    # Conditional t-copula: rho ≈ -0.3 when A_l1 = 0, rho ≈ -0.95 when A_l1 = 1.
+    # During treated periods the L–Y residual dep is almost a perfect inverse.
+    descr = "Conditional t-copula: rho = -0.3 → -0.95 as A_l1 = 0 → 1.",
     forms5 = list(Y = list(L ~ A_l1)),
     fam5   = 2,
+    A_pars = A_pars,
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.30), rho_to_beta(0.90) - rho_to_beta(0.30)),
+      beta = c(rho_to_beta(-0.30), rho_to_beta(-0.95) - rho_to_beta(-0.30)),
       df   = 3,
       par2 = 3
     )))
   ),
 
-  clayton = list(
-    descr = "Clayton copula (k_tau = 0.7). Lower-tail dependence only.",
+  sharp_neg = list(
+    # Same as neg_extreme but with NEAR-DETERMINISTIC L→A.
+    # IPW positivity should still hold (no logical zeros) but weights swell.
+    descr = "Sharp L→A (logit slope -5) + negative Gaussian k_tau = -0.95.",
     forms5 = L ~ 1,
-    fam5   = 3,
-    cop    = list(Y = list(L = list(k_tau = 0.7, par2 = 5)))
+    fam5   = 1,
+    A_pars = A_pars_sharp,
+    cop    = list(Y = list(L = list(k_tau = -0.95, par2 = 5)))
+  ),
+
+  sharp_conditional = list(
+    descr = "Sharp L→A + conditional t-copula rho = -0.3 → -0.95.",
+    forms5 = list(Y = list(L ~ A_l1)),
+    fam5   = 2,
+    A_pars = A_pars_sharp,
+    cop    = list(Y = list(L = list(
+      beta = c(rho_to_beta(-0.30), rho_to_beta(-0.95) - rho_to_beta(-0.30)),
+      df   = 3,
+      par2 = 3
+    )))
+  ),
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SIMPSON-FLIP, TAKE 2: REVERSE THE L→A DIRECTION
+  # With the original direction (low-L → treated) and a negative copula the
+  # two bias channels cancel — that's why naive sat at the truth.
+  # If instead high-L → treated AND copula is strongly positive, both channels
+  # push naive in the SAME direction (+) which is OPPOSITE the true effect (-),
+  # so the naive coefficient can actually flip sign.
+  # Also shrink the true causal effect from −0.5 to −0.2 so the confounding
+  # has less to overcome.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  flip_pos = list(
+    descr = "REVERSED L→A (high L treated) + pos k_tau = 0.95, truth = -0.2.",
+    forms5 = L ~ 1,
+    fam5   = 1,
+    A_pars = c(-10, 1, 0.1),       # high L → A = 1 (reversed)
+    Y_pars = c(-2, 0.1, 0.02, -0.2),
+    cop    = list(Y = list(L = list(k_tau = 0.95, par2 = 5)))
+  ),
+
+  flip_pos_t = list(
+    descr = "Reversed L→A + pos t-copula (k_tau = 0.95, df = 2), truth = -0.2.",
+    forms5 = L ~ 1,
+    fam5   = 2,
+    A_pars = c(-10, 1, 0.1),
+    Y_pars = c(-2, 0.1, 0.02, -0.2),
+    cop    = list(Y = list(L = list(k_tau = 0.95, df = 2, par2 = 2)))
+  ),
+
+  flip_cond = list(
+    # Reversed L→A and a conditional copula whose rho swings 0.3 → 0.98
+    # as A_l1 goes 0 → 1: under sustained treatment the L–Y link is almost
+    # comonotonic, on top of A_l1 already carrying confounding info.
+    descr = "Reversed L→A + conditional t (rho 0.3 → 0.98), truth = -0.2.",
+    forms5 = list(Y = list(L ~ A_l1)),
+    fam5   = 2,
+    A_pars = c(-10, 1, 0.1),
+    Y_pars = c(-2, 0.1, 0.02, -0.2),
+    cop    = list(Y = list(L = list(
+      beta = c(rho_to_beta(0.30), rho_to_beta(0.98) - rho_to_beta(0.30)),
+      df   = 3,
+      par2 = 3
+    )))
+  ),
+
+  flip_sharp = list(
+    descr = "Sharp reversed L→A (slope +5) + pos k_tau = 0.98, truth = -0.2.",
+    forms5 = L ~ 1,
+    fam5   = 1,
+    A_pars = c(-50, 5, 0.1),       # near-deterministic high-L → A = 1
+    Y_pars = c(-2, 0.1, 0.02, -0.2),
+    cop    = list(Y = list(L = list(k_tau = 0.98, par2 = 5)))
+  ),
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SIMPSON-FLIP, TAKE 3: WIDE L + TINY CAUSAL EFFECT
+  # The reversed-L→A flip scenarios above didn't fire because L's variance
+  # (phi=0.5) was too small for strong confounding to develop on top of a
+  # −0.2 structural effect over 5 periods. Here we (a) center L at 0 with
+  # sd = 2, (b) drop the structural causal effect to a tiny −0.05, so the
+  # confounding pathway has the upper hand and naive can plausibly go +.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  flip_wide = list(
+    descr = "Wide L (sd=2) + reversed L→A slope 3 + k_tau=0.95, truth=-0.05.",
+    forms5 = L ~ 1,
+    fam5   = 1,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),               # L_t ~ N(0, phi=2) after t=0
+    L_phi  = 2,
+    A_pars = c(0, 3, 0.1),             # logit(P(A=1)) = 3 L (reversed, strong)
+    Y_pars = c(-2, 0.1, 0.02, -0.05),  # tiny true effect
+    cop    = list(Y = list(L = list(k_tau = 0.95, par2 = 5)))
+  ),
+
+  flip_wide_extreme = list(
+    descr = "Wide L + reversed slope 3 + k_tau=0.99, df=2, truth=-0.05.",
+    forms5 = L ~ 1,
+    fam5   = 2,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),
+    L_phi  = 2,
+    A_pars = c(0, 3, 0.1),
+    Y_pars = c(-2, 0.1, 0.02, -0.05),
+    cop    = list(Y = list(L = list(k_tau = 0.99, df = 2, par2 = 2)))
+  ),
+
+  flip_wide_null = list(
+    # NULL true effect: any non-zero naive coefficient is "confounded effect"
+    # — the cleanest illustration of confounding overriding the (zero) truth.
+    descr = "Wide L + reversed + k_tau=0.95, TRUE EFFECT = 0 (null).",
+    forms5 = L ~ 1,
+    fam5   = 1,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),
+    L_phi  = 2,
+    A_pars = c(0, 3, 0.1),
+    Y_pars = c(-2, 0.1, 0.02, 0),
+    cop    = list(Y = list(L = list(k_tau = 0.95, par2 = 5)))
+  ),
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SIMPSON-FLIP, TAKE 4: WORKS!
+  # The earlier flip attempts failed for two structural reasons:
+  #  1. dat0 fixes A_0=A_1=A_2 → only A_3, A_4 carry confounding under T=5,
+  #     so 3 of 5 doses dilute the bias to near-zero. Increasing T to 8 gives
+  #     5 model-generated confounded periods (A_3..A_7).
+  #  2. With binary Y, the structural −0.5 logit per A dominates the bounded
+  #     copula contribution. Shrinking the true effect to −0.02 logit per A
+  #     leaves room for the confounding pathway to win.
+  # Combined with reversed L→A + strong A persistence + conditional copula
+  # whose rho swings 0.3 → 0.99 with past treatment, the naive coefficient
+  # goes POSITIVE (e.g. +0.09) even though the truth is −0.02 — a clean
+  # Simpson's-paradox sign flip.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  simpson_flip = list(
+    # T=8 (5 model-generated confounded periods A_3..A_7), wide L (sd=2),
+    # reversed L→A with strong persistence, conditional t-copula whose rho
+    # swings 0.3 → 0.95 with past treatment, and a tiny structural effect of
+    # -0.02 logit per A. Empirically yields naive ≈ +0.13 (sign-flipped) while
+    # IPW recovers ≈ truth.
+    descr = "★ SIMPSON FLIP: naive coef goes POSITIVE while truth is -0.02.",
+    T      = 8,
+    forms5 = list(Y = list(L ~ A_l1)),
+    fam5   = 2,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),
+    L_phi  = 2,
+    A_pars = c(0, 1, 0.5),               # reversed L→A + mild persistence
+    Y_pars = c(-2, 0, 0, -0.02),         # tiny structural effect
+    cop    = list(Y = list(L = list(
+      beta = c(rho_to_beta(0.30), rho_to_beta(0.95) - rho_to_beta(0.30)),
+      df   = 3,
+      par2 = 3
+    )))
+  ),
+
+  simpson_null = list(
+    # Identical recipe but with truth = 0. Naive should still be clearly
+    # positive — pure confounding fabricates an apparent harmful effect.
+    descr = "★ SIMPSON null: same recipe, TRUE EFFECT = 0.",
+    T      = 8,
+    forms5 = list(Y = list(L ~ A_l1)),
+    fam5   = 2,
+    wide_L = TRUE,
+    L_pars = c(0, 0, 0),
+    L_phi  = 2,
+    A_pars = c(0, 1, 0.5),
+    Y_pars = c(-2, 0, 0, 0),
+    cop    = list(Y = list(L = list(
+      beta = c(rho_to_beta(0.30), rho_to_beta(0.95) - rho_to_beta(0.30)),
+      df   = 3,
+      par2 = 3
+    )))
   )
-  # NOTE: Gumbel (family 4) hangs under this DGP — looks like a numerical
-  # pathology in the Gumbel h-function inversion when combined with the
-  # rejection-sampling loop, so it's omitted from the sweep.
+  # NOTE: Gumbel/Clayton omitted — Gumbel hangs the inversion loop and
+  # Clayton supports only positive Kendall's tau, so it can't deliver a flip.
 )
 
 # ── Build a survivl_model for a given scenario ────────────────────────────────
 
 build_model <- function(scn, dat0, qtls) {
+  T_use <- if (!is.null(scn$T)) scn$T else 5
+  A_vars <- paste0("A_", 0:(T_use - 1))
+  sumA_form <- as.formula(paste("Y ~ B + C + I(",
+                                paste(A_vars, collapse = "+"), ")"))
   f <- forms
+  f[[4]] <- sumA_form
   f[[5]] <- scn$forms5
   fa <- fams
   fa[[5]] <- scn$fam5
+  if (!is.null(scn$Y_fam)) fa[[4]] <- scn$Y_fam
   p <- base_pars
+  if (!is.null(scn$A_pars))  p$A$beta <- scn$A_pars
+  if (!is.null(scn$Y_pars))  p$Y$beta <- scn$Y_pars
+  if (!is.null(scn$Y_phi))   p$Y$phi  <- scn$Y_phi
+  if (!is.null(scn$L_pars))  p$L$beta <- scn$L_pars
+  if (!is.null(scn$L_phi))   p$L$phi  <- scn$L_phi
   p$cop <- scn$cop
   survivl_model(formulas = f, family = fa, pars = p,
-                T = 5, dat = dat0, qtls = qtls)
+                T = T_use, dat = dat0, qtls = qtls)
+}
+
+scn_T <- function(scn) if (!is.null(scn$T)) scn$T else 5
+
+# Allow scenarios to override the structural causal effect (truth) on sum(A).
+scn_truth <- function(scn) {
+  if (!is.null(scn$Y_pars)) scn$Y_pars[4] else causal_parameters[4]
 }
 
 # ── Single-shot diagnostic (large n) for the most interesting scenario ──────
 
 set.seed(42)
 n <- 1e4
-init <- make_init(n)
+init <- make_init(n, L_mean = function(B, C) 0, L_sd = 2)
 
 cat("══════════════════════════════════════════════════════════════════════\n")
-cat("Single-run diagnostic on the conditional-t scenario, n =", n, "\n")
+cat("Single-run diagnostic on simpson_flip, n =", n, "\n")
 cat("══════════════════════════════════════════════════════════════════════\n")
 
-sm  <- build_model(scenarios$conditional_t, init$dat0, init$qtls)
+sm  <- build_model(scenarios$simpson_flip, init$dat0, init$qtls)
 dat <- rmsm(n, sm)
 
-est <- fit_estimators(dat)
-cat(sprintf("truth on sum_A coef = %.3f\n", causal_parameters[4]))
+est <- fit_estimators(dat, T_use = scn_T(scenarios$simpson_flip))
+cat(sprintf("truth on sum_A coef = %.3f\n", scn_truth(scenarios$simpson_flip)))
 cat(sprintf("  IPW   estimate     = %.3f  (bias %+0.3f)\n",
-            est["ipw_trt"],   est["ipw_trt"]   - causal_parameters[4]))
+            est["ipw_trt"],   est["ipw_trt"]   - scn_truth(scenarios$simpson_flip)))
 cat(sprintf("  Naive estimate     = %.3f  (bias %+0.3f)\n",
-            est["naive_trt"], est["naive_trt"] - causal_parameters[4]))
+            est["naive_trt"], est["naive_trt"] - scn_truth(scenarios$simpson_flip)))
 cat(sprintf("  max IPW weight = %.2f, mean weight = %.3f\n",
             est["weight_max"], est["weight_mean"]))
 
-sum_A  <- with(dat, A_0 + A_1 + A_2 + A_3 + A_4)
-mean_L <- with(dat, (L_0 + L_1 + L_2 + L_3 + L_4) / 5)
+T_diag <- scn_T(scenarios$simpson_flip)
+sum_A  <- rowSums(dat[, paste0("A_", 0:(T_diag - 1))])
+mean_L <- rowMeans(dat[, paste0("L_", 0:(T_diag - 1))])
 cat(sprintf("\ncor(sum_A, mean_L) = %.3f\n",  cor(sum_A, mean_L)))
 cat(sprintf("cor(mean_L, Y)     = %.3f\n",    cor(mean_L, dat$Y)))
 cat(sprintf("cor(sum_A, Y)      = %.3f\n",    cor(sum_A, dat$Y)))
@@ -218,21 +442,26 @@ cat("═════════════════════════
 
 run_one <- function(seed, scn) {
   set.seed(seed)
-  init_mc <- make_init(1000)
+  if (isTRUE(scn$wide_L)) {
+    init_mc <- make_init(1000, L_mean = function(B, C) 0, L_sd = 2)
+  } else {
+    init_mc <- make_init(1000)
+  }
   sm <- suppressMessages(build_model(scn, init_mc$dat0, init_mc$qtls))
   d  <- rmsm(1000, sm)
-  fit_estimators(d)
+  fit_estimators(d, T_use = scn_T(scn))
 }
 
 results <- lapply(names(scenarios), function(nm) {
   scn <- scenarios[[nm]]
-  cat(sprintf("\n--- %s ---\n%s\n", nm, scn$descr))
+  truth <- scn_truth(scn)
+  cat(sprintf("\n--- %s ---\n%s\n  (truth on sum_A = %+0.2f)\n",
+              nm, scn$descr, truth))
   mc <- t(sapply(1:50, function(s) {
     tryCatch(run_one(s, scn),
              error = function(e) c(ipw_trt = NA, naive_trt = NA,
                                    weight_max = NA, weight_mean = NA))
   }))
-  truth <- causal_parameters[4]
   cat(sprintf("  IPW   mean = %6.3f   bias = %+0.3f   SD = %.3f\n",
               mean(mc[, "ipw_trt"],   na.rm = TRUE),
               mean(mc[, "ipw_trt"],   na.rm = TRUE) - truth,
@@ -247,20 +476,25 @@ results <- lapply(names(scenarios), function(nm) {
   mc
 })
 names(results) <- names(scenarios)
+truths <- sapply(scenarios, scn_truth)
 
 # ── Summary table ─────────────────────────────────────────────────────────────
 
 cat("\n══════════════════════════════════════════════════════════════════════\n")
-cat("Summary: bias relative to truth = ", causal_parameters[4], "\n")
+cat("Summary (per-scenario truth shown)\n")
 cat("══════════════════════════════════════════════════════════════════════\n")
-summary_tbl <- t(sapply(results, function(mc) {
-  c(ipw_bias   = mean(mc[, "ipw_trt"],   na.rm = TRUE) - causal_parameters[4],
-    naive_bias = mean(mc[, "naive_trt"], na.rm = TRUE) - causal_parameters[4],
-    ipw_sd     = sd(mc[, "ipw_trt"],     na.rm = TRUE),
-    naive_sd   = sd(mc[, "naive_trt"],   na.rm = TRUE),
-    bias_gap   = abs(mean(mc[, "naive_trt"], na.rm = TRUE) - causal_parameters[4]) -
-                 abs(mean(mc[, "ipw_trt"],   na.rm = TRUE) - causal_parameters[4]))
-}))
+summary_tbl <- t(mapply(function(mc, truth) {
+  ipw_mean   <- mean(mc[, "ipw_trt"],   na.rm = TRUE)
+  naive_mean <- mean(mc[, "naive_trt"], na.rm = TRUE)
+  c(truth      = truth,
+    ipw_est    = ipw_mean,
+    naive_est  = naive_mean,
+    ipw_bias   = ipw_mean   - truth,
+    naive_bias = naive_mean - truth,
+    bias_gap   = abs(naive_mean - truth) - abs(ipw_mean - truth),
+    sign_flip  = if (truth == 0) NA_real_ else
+                 as.numeric(sign(naive_mean) != sign(truth)))
+}, results, truths))
 print(round(summary_tbl, 3))
-cat("\nThe `bias_gap` column = |naive bias| - |IPW bias|. Bigger = better\n")
-cat("evidence that IPW separates from naive under this parametrization.\n")
+cat("\nbias_gap = |naive bias| - |IPW bias|; sign_flip = 1 means the naive\n")
+cat("coefficient has the OPPOSITE sign from the truth (Simpson's paradox).\n")
