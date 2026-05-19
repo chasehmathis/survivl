@@ -46,7 +46,7 @@ sim_variable <- function(n, formulas, family, pars, link,
       cop_fams[[l, j]] <- family[[2]][l]
       cop_forms[[l, j]] <- formulas[[2]][[l]][[idx]]
       cop_pars[[l, j]] <- if (!is.null(pars$cop[[1]][[l]]$k_tau)) {
-        list(k_tau = pars$cop[[1]][[l]]$k_tau, df = pars$cop[[1]][[l]]$df)
+        list(tau = pars$cop[[1]][[l]]$k_tau, df = pars$cop[[1]][[l]]$df)
       } else {
         list(beta = pars$cop[[1]][[l]]$beta[[idx]], df = pars$cop[[1]][[l]]$df)
       }
