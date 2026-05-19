@@ -331,23 +331,24 @@ scenarios <- list(
   # ─────────────────────────────────────────────────────────────────────────
 
   simpson_flip = list(
-    # Small-variance flip. sd(Y) = 1 so coefficients sit on a familiar scale.
-    # The per-dose delta between IPW and naive is ~0.05 (constrained by
-    # rho·sd_Y / sd_sumA), but it's enough to flip the sign of a -0.05 truth.
-    # Over the 8-dose course the cumulative delta is ~0.4 sd(Y).
-    descr = "★ SIMPSON FLIP (small sd_Y=1): truth -0.05, naive ≈ +0.005, IPW ≈ -0.05.",
+    # sd(Y) = 20 keeps Y on a natural continuous scale (think a clinical score
+    # like change in haemoglobin × 10) while still giving a big per-dose delta.
+    # Truth says each dose lowers Y by 0.8 (cumulative -6.4 over 8 doses).
+    # Naive sign-flips to ≈ +0.48 (cumulative +3.8). IPW recovers ≈ -0.58
+    # (modestly attenuated but right direction).
+    descr = "★ SIMPSON FLIP (sd_Y=20): truth -0.8, naive ≈ +0.48, IPW ≈ -0.58.",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
     fam5   = 2,
     Y_fam  = 1,
-    Y_phi  = 1,                              # sd_Y = 1
+    Y_phi  = 400,                            # sd_Y = 20
     wide_L = TRUE,
     L_pars = c(0, 0, 0),
     L_phi  = 9,                              # sd_L = 3
-    A_pars = c(0, 1.5, 0.5),                 # reversed L→A, mild persistence
-    Y_pars = c(0, 0, 0, -0.05),              # truth -0.05 per dose
+    A_pars = c(0, 1.2, 0.5),                 # reversed L→A, mild persistence
+    Y_pars = c(0, 0, 0, -0.8),               # truth -0.8 per dose
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.00), rho_to_beta(0.99) - rho_to_beta(0.00)),
+      beta = c(rho_to_beta(0.30), rho_to_beta(0.99) - rho_to_beta(0.30)),
       df   = 3,
       par2 = 3
     )))
@@ -375,19 +376,19 @@ scenarios <- list(
   ),
 
   simpson_null = list(
-    descr = "★ SIMPSON null (sd_Y=1): truth = 0, naive ≈ +0.06.",
+    descr = "★ SIMPSON null (sd_Y=20): truth = 0, naive ≈ +1.0 (fabricated harm).",
     T      = 8,
     forms5 = list(Y = list(L ~ A_l1)),
     fam5   = 2,
     Y_fam  = 1,
-    Y_phi  = 1,
+    Y_phi  = 400,
     wide_L = TRUE,
     L_pars = c(0, 0, 0),
     L_phi  = 9,
-    A_pars = c(0, 1.5, 0.5),
+    A_pars = c(0, 1.2, 0.5),
     Y_pars = c(0, 0, 0, 0),
     cop    = list(Y = list(L = list(
-      beta = c(rho_to_beta(0.00), rho_to_beta(0.99) - rho_to_beta(0.00)),
+      beta = c(rho_to_beta(0.30), rho_to_beta(0.99) - rho_to_beta(0.30)),
       df   = 3,
       par2 = 3
     )))
