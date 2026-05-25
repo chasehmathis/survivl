@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -55,6 +55,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -68,6 +71,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul>
 </li>
@@ -92,7 +98,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-08-06</h4>
+            <h4 data-toc-skip class="date">2026-05-25</h4>
       
 
       <div class="hidden name"><code>Seaman-Keogh-Bivariate-Copula.Rmd</code></div>
@@ -113,7 +119,7 @@ basics of MSMs see the Marginal Structural Model vignettes.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>digits<span class="op">=</span><span class="fl">4</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">124</span><span class="op">)</span></span></code></pre></div>
-<p>We define our survival model the same as the modle in the Marginal
+<p>We define our survival model the same as the model in the Marginal
 Structural Model Vignette. One thing that is different is that the
 copula formula is just one list entry. This formula no longer specifies
 the copula, but specifies the risk function necessary for the simulation
@@ -142,7 +148,8 @@ model hazards.</p>
 <span>             Z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0.7</span>,<span class="fl">0.2</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>             X <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.5</span>,<span class="fl">0.25</span>,<span class="fl">0.5</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>             Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">10</span>,<span class="op">-</span><span class="fl">1</span><span class="op">/</span><span class="fl">5</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>             cop <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rho <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>             cop <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Y<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Z <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rho <span class="op">=</span> <span class="op">-</span><span class="fl">0.5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># only can use gaussian rho parameter</span></span>
 <span><span class="va">link</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"logit"</span><span class="op">)</span></span></code></pre></div>
 <p>Note that we put the family for our outcome to be binomial. A
 binomial distribution is not a survival distribution like exponential or
@@ -158,7 +165,7 @@ time.</p>
 <span>                    pars<span class="op">=</span><span class="va">pars</span>, T <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>                    link <span class="op">=</span> <span class="va">link</span>, method <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
 <span>                    control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>bootsims <span class="op">=</span> <span class="fl">2.5e2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 13</span></span></code></pre>
+<pre><code><span><span class="co">## User is specifying explicit probability risk function structural model.</span></span></code></pre>
 <p>We can now simulate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><msup><mn>10</mn><mn>4</mn></msup></mrow><annotation encoding="application/x-tex">n=10^4</annotation></semantics></math>
 observations from the model over 10 time points. You can see the
@@ -231,7 +238,7 @@ can use the exponential or weibull distribution.</p>
 <span><span class="va">pars2</span> <span class="op">&lt;-</span> <span class="va">pars</span>;</span>
 <span><span class="va">pars2</span><span class="op">[[</span><span class="st">"Y"</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>beta<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="op">-</span><span class="fl">0.45</span>, <span class="op">-</span><span class="fl">0.2</span><span class="op">)</span>, phi<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sm2</span> <span class="op">&lt;-</span> <span class="fu">modify</span><span class="op">(</span><span class="va">sm</span>, family <span class="op">=</span> <span class="va">fams2</span>, pars <span class="op">=</span> <span class="va">pars2</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sm2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/modify.html">modify</a></span><span class="op">(</span><span class="va">sm</span>, family <span class="op">=</span> <span class="va">fams2</span>, pars <span class="op">=</span> <span class="va">pars2</span><span class="op">)</span></span></code></pre></div>
 <p>Now, we model the outcome to be exponential (Gamma family is 3) and
 phi = 1 is exponential. We use the modify function to modify our
 survival model object. For fun, we also change the paramaters of <span class="math inline">$Y \mid \rm{do}(X)$</span> The rest of the data
@@ -295,12 +302,12 @@ generation is the same as above.</p>
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Robin Evans.</p>
+<p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>

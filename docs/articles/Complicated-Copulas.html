@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -55,6 +55,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -68,6 +71,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul>
 </li>
@@ -92,7 +98,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-08-06</h4>
+            <h4 data-toc-skip class="date">2026-05-25</h4>
       
 
       <div class="hidden name"><code>Complicated-Copulas.Rmd</code></div>
@@ -104,7 +110,7 @@ Mathis</h4>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">survivl</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/TranHung93/ipw" class="external-link">ipw</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://broom.tidymodels.org/" class="external-link">broom</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://yihui.org/knitr/" class="external-link">knitr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -147,10 +153,9 @@ is the same and it is a gaussian copula with parameter
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
-<span><span class="co">#&gt; integer(0)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 012345</span></span>
-<span><span class="co">#&gt; 6</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl1</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -196,10 +201,9 @@ the correlation parameter is
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">2e4</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
-<span><span class="co">#&gt; integer(0)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 012345</span></span>
-<span><span class="co">#&gt; 6</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 012345</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl2</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
@@ -251,11 +255,10 @@ is conditioned on
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
-<span><span class="co">#&gt; integer(0)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 01234</span></span>
-<span><span class="co">#&gt; 5</span></span>
-<span><span class="co">#&gt; 6</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 01234</span></span>
+<span><span class="co">#&gt; 5</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl3</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z1</span>, <span class="va">Z2</span><span class="op">)</span><span class="op">)</span></span>
@@ -305,11 +308,10 @@ construction.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>T<span class="op">=</span><span class="fl">7</span>, formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>, pars<span class="op">=</span><span class="va">pars</span>, link<span class="op">=</span><span class="va">link</span><span class="op">)</span></span>
-<span><span class="co">#&gt; integer(0)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 01234</span></span>
-<span><span class="co">#&gt; 5</span></span>
-<span><span class="co">#&gt; 6</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 01234</span></span>
+<span><span class="co">#&gt; 5</span></span>
+<span><span class="co">#&gt; 6</span></span>
 <span><span class="va">datl4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">datl4</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="cn">T</span>, <span class="va">Z1</span>, <span class="va">Z2</span><span class="op">)</span><span class="op">)</span></span>
@@ -480,12 +482,12 @@ the models and print the estimates at the end. All estimates are within
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Robin Evans.</p>
+<p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>

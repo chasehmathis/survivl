@@ -135,7 +135,7 @@ $L \to A$ confounding because the propensity model becomes nearly
 deterministic at the tails. We average over 20 replications:
 
 ```{r mc}
-mc <- t(sapply(1:20, fit_one))
+mc <- t(sapply(1:50, fit_one))
 results <- data.frame(
   estimator    = c("Truth", "IPW", "Naive"),
   per_dose     = c(-0.8, mean(mc[, "ipw"]), mean(mc[, "naive"])),

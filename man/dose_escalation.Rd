@@ -10,6 +10,7 @@ dose_escalation(
   side_effect,
   init_prob = 0.5,
   trigger = function(z) z > 0,
+  lock_placebo = TRUE,
   slip = 0
 )
 
@@ -27,6 +28,12 @@ dose (\code{1}) rather than placebo (\code{0})}
 \item{trigger}{function mapping the side-effect variable to a logical vector
 that is \code{TRUE} where a bad side effect occurred (default treats any
 positive value as a side effect)}
+
+\item{lock_placebo}{if \code{TRUE}, subjects whose time-0 assignment is placebo
+(\code{0}) are held at \code{0} for the entire follow-up: the placebo arm never
+escalates.  This distinguishes a randomized-placebo subject from an active
+subject who happens to have de-escalated down to \code{0} (the latter can still
+escalate again).  Defaults to \code{TRUE}.}
 
 \item{slip}{reserved for future use; must be \code{0} (fully deterministic)}
 

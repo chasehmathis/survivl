@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -38,6 +38,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -51,6 +54,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul></li>
 <li>
@@ -93,6 +99,10 @@
         </td>
         <td><p>Obtain reduced formulas and parameter vectors for earlier time-points</p></td>
       </tr><tr><td>
+          <p><code><a href="dose_escalation.html">dose_escalation()</a></code> <code><a href="dose_escalation.html">is_deterministic()</a></code> </p>
+        </td>
+        <td><p>Deterministic treatment-assignment rules</p></td>
+      </tr><tr><td>
           <p><code><a href="drop_LHS.html">drop_LHS()</a></code> </p>
         </td>
         <td><p>Drop left hand side from a formula</p></td>
@@ -129,6 +139,10 @@
         </td>
         <td><p>Modify conditional specified lagged formuals to correct formulas</p></td>
       </tr><tr><td>
+          <p><code><a href="modify.html">modify()</a></code> </p>
+        </td>
+        <td><p>Modify an object</p></td>
+      </tr><tr><td>
           <p><code><a href="modify.survivl_model.html">modify(<i>&lt;survivl_model&gt;</i>)</a></code> </p>
         </td>
         <td><p>Modify <code>survivl_model</code> object</p></td>
@@ -152,6 +166,10 @@
           <p><code><a href="regex_extr.html">regex_extr()</a></code> </p>
         </td>
         <td><p>Extract patterns from a string</p></td>
+      </tr><tr><td>
+          <p><code><a href="rmsm.html">rmsm()</a></code> </p>
+        </td>
+        <td><p>Simulate from a <code>survivl_model</code> object</p></td>
       </tr><tr><td>
           <p><code><a href="rmv_time.html">rmv_time()</a></code> </p>
         </td>
@@ -189,7 +207,7 @@
         </td>
         <td><p>Data from a survival model</p></td>
       </tr><tr><td>
-          <p><code><a href="survivl_fams.html">weibull_surv_fam()</a></code> <code><a href="survivl_fams.html">exp_surv_fam()</a></code> </p>
+          <p><code><a href="survivl_fams.html">weibull_surv_fam()</a></code> <code><a href="survivl_fams.html">exp_surv_fam()</a></code> <code><a href="survivl_fams.html">lnorm_surv_fam()</a></code> </p>
         </td>
         <td><p>Families for survival distributions</p></td>
       </tr><tr><td>
@@ -209,11 +227,11 @@
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Robin Evans.</p>
+  <p></p><p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

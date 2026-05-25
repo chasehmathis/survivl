@@ -18,7 +18,7 @@ copula CDF if p = TRUE"><!-- mathjax --><script src="https://cdnjs.cloudflare.co
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -39,6 +39,9 @@ copula CDF if p = TRUE"><!-- mathjax --><script src="https://cdnjs.cloudflare.co
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -52,6 +55,9 @@ copula CDF if p = TRUE"><!-- mathjax --><script src="https://cdnjs.cloudflare.co
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul></li>
 <li>
@@ -88,6 +94,10 @@ copula CDF if p = TRUE</p>
 <dd><p>a matrix of two quantiles qs = (q1, q2) as we are using bivariate copulas.</p></dd>
 
 
+<dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
+<dd><p>conditioning variable values used in conditional copula computations.</p></dd>
+
+
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
 <dd><p>A list of numeric copula family 1,2,3,4,5 see <code>copula_vals</code> for more.</p></dd>
 
@@ -96,16 +106,16 @@ copula CDF if p = TRUE</p>
 <dd><p>Parameter for the copula.</p></dd>
 
 
+<dt id="arg-idxs">idxs<a class="anchor" aria-label="anchor" href="#arg-idxs"></a></dt>
+<dd><p>index or indices indicating which copula to use when there are multiple.</p></dd>
+
+
 <dt id="arg-inv">inv<a class="anchor" aria-label="anchor" href="#arg-inv"></a></dt>
 <dd><p>Boolean if inverse or regular h function</p></dd>
 
 
 <dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
 <dd><p>Boolean if we want to compute a cdf instead of h function required for survival outcomes.</p></dd>
-
-
-<dt id="arg-i">i<a class="anchor" aria-label="anchor" href="#arg-i"></a></dt>
-<dd><p>Use i as an index for which copula we are working with if there are multiple</p></dd>
 
 </dl></div>
 
@@ -117,11 +127,11 @@ copula CDF if p = TRUE</p>
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Robin Evans.</p>
+  <p></p><p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

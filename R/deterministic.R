@@ -41,6 +41,11 @@
 ##' @param trigger function mapping the side-effect variable to a logical vector
 ##'   that is `TRUE` where a bad side effect occurred (default treats any
 ##'   positive value as a side effect)
+##' @param lock_placebo if `TRUE`, subjects whose time-0 assignment is placebo
+##'   (`0`) are held at `0` for the entire follow-up: the placebo arm never
+##'   escalates.  This distinguishes a randomized-placebo subject from an active
+##'   subject who happens to have de-escalated down to `0` (the latter can still
+##'   escalate again).  Defaults to `TRUE`.
 ##' @param slip reserved for future use; must be `0` (fully deterministic)
 ##'
 ##' @return An object of class `c("causl_deterministic", "causl_family")`.
@@ -61,7 +66,8 @@
 ##'
 ##' @export
 dose_escalation <- function (max_level, side_effect, init_prob = 0.5,
-                             trigger = function (z) z > 0, slip = 0) {
+                             trigger = function (z) z > 0, lock_placebo = TRUE,
+                             slip = 0) {
   if (missing(max_level)) stop("Must specify 'max_level' (highest dose level)")
   if (missing(side_effect)) stop("Must specify 'side_effect' (name of side-effect variable)")
   if (!isTRUE(all.equal(slip, 0))) {
@@ -86,7 +92,20 @@ dose_escalation <- function (max_level, side_effect, init_prob = 0.5,
 
     prev <- dat[[prev_col]]
     bad  <- as.logical(trigger(dat[[se_col]]))
-    ifelse(bad, pmax(prev - 1, 0), pmin(prev + 1, max_level))
+    out  <- ifelse(bad, pmax(prev - 1, 0), pmin(prev + 1, max_level))
+
+    ## lock the placebo arm: subjects whose time-0 assignment was placebo (0)
+    ## are held at 0 for the entire follow-up.
+    if (lock_placebo) {
+      init_col <- paste0(stem, "_0")
+      if (is.null(dat[[init_col]])) {
+        stop(paste0("Time-0 treatment '", init_col, "' not found; required when ",
+                    "lock_placebo = TRUE"))
+      }
+      out[dat[[init_col]] == 0] <- 0
+    }
+
+    out
   }
 
   structure(list(name = "deterministic",
@@ -95,6 +114,7 @@ dose_escalation <- function (max_level, side_effect, init_prob = 0.5,
                  side_effect = side_effect,
                  init_prob = init_prob,
                  trigger = trigger,
+                 lock_placebo = lock_placebo,
                  slip = slip,
                  pars = character(0),
                  link = "identity",
