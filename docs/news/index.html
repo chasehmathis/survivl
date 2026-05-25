@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -38,6 +38,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -51,6 +54,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul></li>
 <li>
@@ -69,6 +75,15 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.4.1" id="id_-survivl-041">## survivl 0.4.1<a class="anchor" aria-label="anchor" href="#id_-survivl-041"></a></h2>
+<p>CHANGES</p>
+<ul><li><p>Created <code>survivl_model</code>, a mirror image of the <code>causl_model</code> object.</p></li>
+<li><p>New method inspired by the empirical rank technique from <code>causl</code> package and the linear regression to residualize away correlations.</p></li>
+<li><p>Switched all <code>msm_samp</code> to <code>survivl_model</code> and then calling <code>rmsm(n, surv_model)</code></p></li>
+<li><p>Switched some ipw calculations from by hand to using <code><a href="https://rdrr.io/pkg/ipw/man/ipwtm.html" class="external-link">ipw::ipwtm</a></code>.</p></li>
+<li><p>Using <code>coxph</code> instead of <code>svyglm</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.3.2" id="id_-survivl-032">## survivl 0.3.2<a class="anchor" aria-label="anchor" href="#id_-survivl-032"></a></h2>
 <p>CHANGES</p>
@@ -97,11 +112,11 @@
 
 
       <footer><div class="copyright">
-  <p></p><p>Developed by Robin Evans.</p>
+  <p></p><p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>

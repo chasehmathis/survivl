@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -55,6 +55,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -68,6 +71,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul>
 </li>
@@ -158,9 +164,8 @@ inputted information. To simulate samples from this MSM call the
 <span><span class="va">surv_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/survivl_model.html">survivl_model</a></span><span class="op">(</span>formulas<span class="op">=</span><span class="va">formulas</span>, family<span class="op">=</span><span class="va">family</span>,</span>
 <span>                    pars<span class="op">=</span><span class="va">pars</span>, T <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>, <span class="st">"identity"</span>, <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; integer(0)</span></span>
-<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1e4</span>, <span class="va">surv_model</span><span class="op">)</span></span>
-<span><span class="co">#&gt; 01234</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1e4</span>, <span class="va">surv_model</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 01234</span></span>
 <span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -171,9 +176,10 @@ to use inverse probability weighting. We recommend using the
 <code>survey</code> library’s <code>svyglm</code> function, since its
 standard errors account for the re-weighting.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"survey"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://r-survey.r-forge.r-project.org/survey/" class="external-link">survey</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/TranHung93/ipw" class="external-link">ipw</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>digits<span class="op">=</span><span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <p>Now, we fit a GLM to obtain the weighting to use with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>.</p>
@@ -214,8 +220,8 @@ obtain a biased estimate of the coefficient of
 on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span>, </span>
-<span>              family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>, </span>
+<code class="sourceCode R"><span><span class="va">mod_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svyglm.html" class="external-link">svyglm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="va">Y</span><span class="op">)</span> <span class="op">~</span> <span class="va">X</span>,</span>
+<span>              family<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/stats/family.html" class="external-link">binomial</a></span><span class="op">(</span>link<span class="op">=</span><span class="va">log</span><span class="op">)</span>,</span>
 <span>              design <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/survey/man/svydesign.html" class="external-link">svydesign</a></span><span class="op">(</span>ids<span class="op">=</span><span class="va">datl</span><span class="op">$</span><span class="va">id</span>,</span>
 <span>                                 weights<span class="op">=</span><span class="op">~</span><span class="fl">1</span>,</span>
 <span>                                 data<span class="op">=</span><span class="va">datl</span><span class="op">)</span><span class="op">)</span></span>
@@ -236,12 +242,12 @@ on
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Robin Evans.</p>
+<p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>

@@ -3,7 +3,7 @@ title: "Causal Survival Analysis"
 author: "Robin J. Evans"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Causal_Survival_Analysis}
+  %\VignetteIndexEntry{Causal Survival Analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

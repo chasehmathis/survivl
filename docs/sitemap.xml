@@ -6,12 +6,14 @@
 <url><loc>/articles/Causal_Survival_Analysis.html</loc></url>
 <url><loc>/articles/Censoring.html</loc></url>
 <url><loc>/articles/Complicated-Copulas.html</loc></url>
+<url><loc>/articles/Dose-Escalation.html</loc></url>
 <url><loc>/articles/Examples.html</loc></url>
 <url><loc>/articles/Longitudinal-Outcome.html</loc></url>
 <url><loc>/articles/Longitudinal-Single-Outcome.html</loc></url>
 <url><loc>/articles/MSMs.html</loc></url>
 <url><loc>/articles/Plasmode.html</loc></url>
 <url><loc>/articles/Seaman-Keogh-Bivariate-Copula.html</loc></url>
+<url><loc>/articles/Simpson-Flip.html</loc></url>
 <url><loc>/articles/index.html</loc></url>
 <url><loc>/authors.html</loc></url>
 <url><loc>/index.html</loc></url>
@@ -22,6 +24,7 @@
 <url><loc>/reference/collect_events.html</loc></url>
 <url><loc>/reference/compute_copula_quantiles.html</loc></url>
 <url><loc>/reference/curr_inputs.html</loc></url>
+<url><loc>/reference/dose_escalation.html</loc></url>
 <url><loc>/reference/drop_LHS.html</loc></url>
 <url><loc>/reference/empirical_cdf_bootstrap.html</loc></url>
 <url><loc>/reference/get_surv_family.html</loc></url>
@@ -32,12 +35,14 @@
 <url><loc>/reference/ll_surv.html</loc></url>
 <url><loc>/reference/manipulate_survival.html</loc></url>
 <url><loc>/reference/mod_args.html</loc></url>
+<url><loc>/reference/modify.html</loc></url>
 <url><loc>/reference/modify.survivl_model.html</loc></url>
 <url><loc>/reference/modify_inputs.html</loc></url>
 <url><loc>/reference/msm_samp.html</loc></url>
 <url><loc>/reference/print.survivl_model.html</loc></url>
 <url><loc>/reference/process_inputs.html</loc></url>
 <url><loc>/reference/regex_extr.html</loc></url>
+<url><loc>/reference/rmsm.html</loc></url>
 <url><loc>/reference/rmv_time.html</loc></url>
 <url><loc>/reference/sim_bootstrap_survivl.html</loc></url>
 <url><loc>/reference/sim_inversion_longitudinal.html</loc></url>

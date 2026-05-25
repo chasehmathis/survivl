@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">survivl</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.4.1</span>
       </span>
     </div>
 
@@ -55,6 +55,9 @@
       <a href="../articles/Complicated-Copulas.html">Complicated Copulas</a>
     </li>
     <li>
+      <a href="../articles/Dose-Escalation.html">Deterministic Dose Escalation</a>
+    </li>
+    <li>
       <a href="../articles/Examples.html">Examples</a>
     </li>
     <li>
@@ -68,6 +71,9 @@
     </li>
     <li>
       <a href="../articles/Seaman-Keogh-Bivariate-Copula.html">Survival Outcomes using Risk Functions</a>
+    </li>
+    <li>
+      <a href="../articles/Simpson-Flip.html">Simpson's Paradox: When IPW and Naive Disagree on the Sign</a>
     </li>
   </ul>
 </li>
@@ -92,7 +98,7 @@
                         <h4 data-toc-skip class="author">Chase
 Mathis</h4>
             
-            <h4 data-toc-skip class="date">2025-08-06</h4>
+            <h4 data-toc-skip class="date">2026-05-25</h4>
       
 
       <div class="hidden name"><code>Plasmode.Rmd</code></div>
@@ -110,7 +116,7 @@ data already and we continue to simulate from that pre-existing data.
 Begin by loading the library.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">survivl</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">ipw</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/TranHung93/ipw" class="external-link">ipw</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/therneau/survival" class="external-link">survival</a></span><span class="op">)</span></span>
 <span><span class="va">rho_to_beta</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">rho</span><span class="op">)</span><span class="op">{</span></span>
 <span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">rho</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">/</span><span class="fl">2</span></span>
@@ -193,16 +199,15 @@ and
 <span>                    link <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"identity"</span><span class="op">)</span>,</span>
 <span>                    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"identity"</span>, <span class="st">"logit"</span><span class="op">)</span>,</span>
 <span>                    <span class="st">"logit"</span>, <span class="st">"log"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## integer(0)</span></span></code></pre>
 <p>We simulate the rest of the data <code>dat2</code>, starting with
 <code>dat</code>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu">rmsm</span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## 01234</span></span></code></pre>
-<pre><code><span><span class="co">## Warning in sim_inversion_survivl(out, surv_model): Time: 4 Many samples lost. </span></span>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rmsm.html">rmsm</a></span><span class="op">(</span><span class="va">n</span>, <span class="va">surv_model</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## 01234</span></span></code></pre>
+<pre><code><span><span class="co">## Warning in sim_inversion_survivl(out, surv_model): Time: 4 Many samples lost.</span></span>
 <span><span class="co">##                        May result in unstable calculations.</span></span></code></pre>
 <p>We are able to recover the causal estimand.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">datl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/manipulate_survival.html">surv_to_long</a></span><span class="op">(</span><span class="va">dat2</span><span class="op">)</span></span>
 <span></span>
 <span></span>
@@ -257,12 +262,12 @@ and
 
       <footer><div class="copyright">
   <p></p>
-<p>Developed by Robin Evans.</p>
+<p>Developed by Robin Evans, Chase Mathis.</p>
 </div>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer>
