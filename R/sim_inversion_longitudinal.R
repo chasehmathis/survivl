@@ -62,7 +62,7 @@ sim_inversion_longitudinal <- function(out, surv_model) {
       cop_fams[[l, j]] <- family[[5]][[1]][[l]]
       cop_forms[[l, j]] <- mod_inputs$formulas[[4]][[1]][[l]][[idx]]
       cop_pars[[l, j]] <- if (!is.null(mod_inputs$pars$cop[[1]][[l]]$k_tau)) {
-        list(tau = mod_inputs$pars$cop[[1]][[l]]$k_tau, df = mod_inputs$pars$cop[[1]][[l]]$df)
+        list(k_tau = mod_inputs$pars$cop[[1]][[l]]$k_tau, df = mod_inputs$pars$cop[[1]][[l]]$df)
       } else {
         list(beta = mod_inputs$pars$cop[[1]][[l]]$beta[[idx]], df = mod_inputs$pars$cop[[1]][[l]]$df)
       }
