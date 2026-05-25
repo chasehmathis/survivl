@@ -57,6 +57,13 @@ process_inputs <- function(formulas, pars, family, link,
   ## introduce code from causl
   dims <- lengths(formulas)
 
+  ## allow deterministic-rule family objects (e.g. dose_escalation()) to be
+  ## supplied bare; wrap them as a length-1 list so the family/formula length
+  ## bookkeeping in process_family() lines up with the other slots
+  for (i in seq_along(family)) {
+    if (methods::is(family[[i]], "causl_deterministic")) family[[i]] <- list(family[[i]])
+  }
+
   family <- causl::process_family(family = family, dims = dims, func_return = get_surv_family)
   ## now set up link functions
 
@@ -82,6 +89,8 @@ process_inputs <- function(formulas, pars, family, link,
   ## A better check for number of parameters
   for (j in seq_along(LHSs)) {
     for (i in seq_along(formulas[[j]])) {
+      ## deterministic treatments carry no beta vector, so skip the count check
+      if (is_deterministic(family[[j]][[i]])) next
 # only check the end
       for(t in c(T-2, T-1)){
         if(j > 1){modLHS = TRUE}

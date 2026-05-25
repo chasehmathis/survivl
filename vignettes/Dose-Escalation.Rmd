@@ -1,0 +1,155 @@
+---
+title: "Deterministic Dose Escalation"
+author: "Chase Mathis"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Dose-Escalation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = TRUE,
+  warning = FALSE
+)
+```
+
+```{r load}
+library(survivl)
+options(digits = 4)
+```
+
+# Deterministic treatments
+
+By default each treatment $A_k$ is *drawn* from a GLM given the past.
+`dose_escalation()` instead makes $A_k$ a **deterministic function** of the past
+-- a *dose-escalation* regime, where patients climb through ordered dose levels
+but a bad side effect steps them back down. Drop it into the treatment slot of
+`family` where a numeric code (e.g. `5`) would otherwise go.
+
+# The escalation rule
+
+For dose levels $0$ (placebo) to $L$ (`max_level`) and a contemporaneous
+side-effect variable $Z_k$:
+
+* **time 0:** coin flip, $A_0 \sim \mathrm{Bernoulli}(\texttt{init\_prob})$ on $\{0, 1\}$;
+* **no side effect:** escalate, $A_k = \min(A_{k-1} + 1,\; L)$;
+* **bad side effect:** de-escalate, $A_k = \max(A_{k-1} - 1,\; 0)$.
+
+$Z_k$ is read from `paste0(side_effect, "_", k)`, simulated before $A_k$ each
+step. The treatment formula's RHS is ignored (use `X ~ 1`) and needs no `beta`.
+
+# A worked example
+
+A study with a binary baseline `C`, a binary side-effect indicator `Z`, the
+dose-escalation treatment `X` over levels $0,\dots,3$, and a Gamma outcome `Y`
+on the cumulative dose.
+
+```{r model}
+T <- 7
+L <- 3   # dose levels 0 (placebo), 1, 2, 3
+
+formulas <- list(C ~ 1,
+                 Z ~ X_l1 + C,                       # side effect; depends on previous dose
+                 X ~ 1,                              # treatment: RHS ignored
+                 Y ~ I(X_0 + X_1 + X_2 + X_3 + X_4 + X_5 + X_6) + C,
+                 cop ~ 1)
+
+family <- list(5,                                    # C binomial
+               5,                                    # Z binomial (side-effect indicator)
+               dose_escalation(max_level = L, side_effect = "Z", init_prob = 0.5),
+               3,                                    # Y Gamma
+               1)                                    # gaussian copula
+
+pars <- list(C = list(beta = 0),
+             Z = list(beta = c(-1/2, 0.4, 0.25)),    # intercept + X_{t-1} + C
+             X = list(),                             # deterministic: no parameters
+             Y = list(beta = c(0.05, 0.45, 0.05), phi = 1),
+             cop = list(Y = list(Z = list(beta = 0.8472979))))
+
+set.seed(1)
+surv_model <- survivl_model(T = T, formulas = formulas, family = family, pars = pars)
+dat <- rmsm(1e4, surv_model)
+```
+
+Doses shift upward over time but stay in $\{0,\dots,3\}$:
+
+```{r dist}
+A <- as.matrix(dat[, paste0("X_", 0:(T - 1))])
+apply(A, 2, function(x) table(factor(x, levels = 0:L)))
+```
+
+Time 0 is a coin flip on placebo / lowest dose:
+
+```{r coinflip}
+table(A[, 1])
+```
+
+The rule holds exactly at every transition:
+
+```{r check}
+Z <- as.matrix(dat[, paste0("Z_", 0:(T - 1))])
+all(sapply(2:T, function(k) {
+  prev <- A[, k - 1]; bad <- Z[, k] > 0
+  all(A[, k] == ifelse(bad, pmax(prev - 1, 0), pmin(prev + 1, L)))
+}))
+```
+
+# Customising the side-effect trigger
+
+For a non-binary side effect, pass a `trigger` mapping it to a logical, e.g.
+de-escalate when a toxicity score exceeds a threshold:
+
+```{r trigger, eval=FALSE}
+dose_escalation(max_level = 3, side_effect = "Tox",
+                trigger = function(z) z > 1.5)
+```
+
+# Recovering the causal effect with g-computation
+
+The deterministic propensity $P(A_k \mid \text{past})$ is degenerate (0/1), so
+IPW is unavailable; use the **g-formula**. Intervene on the dose path,
+$\mathrm{do}(X_k = c)$, let `Z` evolve, and read off `Y`. A constant-dose
+intervention is itself a deterministic rule returning the fixed level `c`:
+
+```{r static-dose}
+static_dose <- function(c) {
+  structure(list(name = "deterministic",
+                 rule = function(dat, k, vnm) rep(c, nrow(dat)),
+                 pars = character(0), link = "identity", custom_links = NULL),
+            class = c("causl_deterministic", "causl_family"))
+}
+```
+
+Simulate at each dose level, pool, and fit the MSM:
+
+```{r gcomp}
+gcomp <- do.call(rbind, lapply(0:L, function(c) {
+  fam_c <- family
+  fam_c[[3]] <- static_dose(c)                       # do(X_k = c) for all k
+  sm <- survivl_model(T = T, formulas = formulas, family = fam_c, pars = pars)
+  d  <- rmsm(2e4, sm)
+  data.frame(Y = d$Y, cumX = rowSums(d[, paste0("X_", 0:(T - 1))]), C = d$C)
+}))
+
+coef(glm(Y ~ cumX + C, data = gcomp, family = Gamma(link = "log")))
+```
+
+This recovers `pars$Y$beta` (`r paste(pars$Y$beta, collapse = ", ")`). A naive
+fit to the observed data, without intervening, does not:
+
+```{r naive}
+dat$cumX <- rowSums(dat[, paste0("X_", 0:(T - 1))])
+coef(glm(Y ~ cumX + C, data = dat, family = Gamma(link = "log")))
+```
+
+The dose coefficient is biased away from `r pars$Y$beta[2]`: `Z` is a
+time-varying confounder (driven by the previous dose, coupled to `Y` via the
+copula), which g-computation removes and the naive fit does not.
+
+A future release will add a per-transition *slip* probability (the reserved
+`slip` argument) to restore positivity for IPW.

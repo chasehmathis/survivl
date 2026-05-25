@@ -39,6 +39,21 @@ sim_block <- function(out, proc_inputs, quantiles, kwd, sim_Y = TRUE) {
       curr_form <- formulas[[j]][[i]]
       curr_fam <- family[[j]][[i]]
 
+      ## deterministic treatment rule (e.g. dose escalation): bypass the GLM
+      ## draw and assign the treatment as a function of the past.  The formula
+      ## RHS is ignored; the treatment is not coupled by the copula, so a
+      ## placeholder quantile is stored to keep the quantile frame aligned.
+      if (is_deterministic(curr_fam)) {
+        fam_det <- if (methods::is(curr_fam, "causl_deterministic")) curr_fam else curr_fam[[1]]
+        out[[vnm]] <- fam_det$rule(dat = out, k = k, vnm = vnm)
+        if (is.null(quantiles)) {
+          quantiles <- stats::setNames(data.frame(rep(NA_real_, nrow(out))), vnm_q)
+        } else {
+          quantiles[[vnm_q]] <- NA_real_
+        }
+        next
+      }
+
       trm <- terms(curr_form)
       # curr_form2 <- delete.response(terms(curr_form))
       MM <- model.matrix(delete.response(trm), data = out)
